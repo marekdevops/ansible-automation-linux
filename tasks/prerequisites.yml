@@ -1,0 +1,78 @@
+---
+# Zadania wstępne - sprawdzenie wymagań
+# Plik: tasks/prerequisites.yml
+
+- name: "Sprawdź wersję Ansible"
+  assert:
+    that:
+      - ansible_version.full is version('2.12', '>=')
+    fail_msg: "Wymagana wersja Ansible >= 2.12, aktualna: {{ ansible_version.full }}"
+    success_msg: "Wersja Ansible OK: {{ ansible_version.full }}"
+
+- name: "Sprawdź system operacyjny"
+  assert:
+    that:
+      - ansible_os_family in ['RedHat', 'Debian']
+    fail_msg: "Nieobsługiwany system operacyjny: {{ ansible_os_family }}"
+    success_msg: "System operacyjny obsługiwany: {{ ansible_os_family }}"
+
+- name: "Sprawdź dostępność sudo"
+  command: which sudo
+  register: sudo_check
+  failed_when: false
+  changed_when: false
+
+- name: "Sprawdź uprawnienia sudo"
+  command: sudo -n true
+  register: sudo_test
+  failed_when: false
+  changed_when: false
+  when: sudo_check.rc == 0
+
+- name: "Ostrzeżenie o braku sudo"
+  debug:
+    msg: "UWAGA: Sudo nie jest dostępne lub skonfigurowane. Niektóre zadania mogą się nie powieść."
+  when: sudo_check.rc != 0 or sudo_test.rc != 0
+
+- name: "Sprawdź dostępność Pythona"
+  command: "{{ ansible_python_interpreter | default('python3') }} --version"
+  register: python_version
+  changed_when: false
+
+- name: "Wyświetl wersję Pythona"
+  debug:
+    msg: "Python version: {{ python_version.stdout }}"
+
+- name: "Sprawdź wolne miejsce na dysku"
+  shell: df -h / | awk 'NR==2 {print $4}' | sed 's/%//'
+  register: disk_space
+  changed_when: false
+
+- name: "Ostrzeżenie o małym miejscu na dysku"
+  debug:
+    msg: "UWAGA: Mało miejsca na dysku systemowym. Dostępne: {{ disk_space.stdout }}"
+  when: disk_space.stdout | int < 10
+
+- name: "Sprawdź dostępność internetu"
+  uri:
+    url: "http://google.com"
+    method: HEAD
+    timeout: 10
+  register: internet_check
+  failed_when: false
+  changed_when: false
+
+- name: "Ostrzeżenie o braku internetu"
+  debug:
+    msg: "UWAGA: Brak dostępu do internetu. Instalacja pakietów może się nie powieść."
+  when: internet_check.status != 200
+
+- name: "Utwórz katalogi robocze"
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop: "{{ base_directories }}"
+  when: base_directories is defined

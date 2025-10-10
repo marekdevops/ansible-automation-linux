@@ -1,0 +1,46 @@
+# Chrony configuration file
+# Wygenerowano przez Ansible - {{ ansible_date_time.iso8601 }}
+
+# Serwery NTP
+{% for server in chrony_config.servers %}
+server {{ server }} iburst
+{% endfor %}
+
+# Stratum weight
+stratumweight {{ chrony_config.stratumweight | default(0) }}
+
+# Plik drift
+driftfile {{ chrony_config.driftfile | default('/var/lib/chrony/drift') }}
+
+# RTC sync
+{% if chrony_config.rtcsync | default(true) %}
+rtcsync
+{% endif %}
+
+# Make step
+{% if chrony_config.makestep is defined %}
+makestep {{ chrony_config.makestep }}
+{% endif %}
+
+# Bind command addresses
+{% for addr in chrony_config.bindcmdaddress | default(['127.0.0.1', '::1']) %}
+bindcmdaddress {{ addr }}
+{% endfor %}
+
+# Key file
+keyfile /etc/chrony.keys
+
+# Command key
+commandkey 1
+
+# Generate command key if missing
+generatecommandkey
+
+# Disable logging of client accesses
+noclientlog
+
+# Send a message to syslog if a clock adjustment is larger than 0.5 seconds
+logchange 0.5
+
+# Log files
+logdir /var/log/chrony

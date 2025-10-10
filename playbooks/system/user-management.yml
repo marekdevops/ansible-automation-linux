@@ -1,0 +1,134 @@
+---
+# Zarządzanie użytkownikami i grupami
+# Plik: playbooks/system/user-management.yml
+
+- name: "=== ZARZĄDZANIE UŻYTKOWNIKAMI I GRUPAMI ==="
+  debug:
+    msg: "Konfiguracja użytkowników i grup systemowych"
+  tags: users
+
+- name: "Utwórz grupy systemowe"
+  group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid | default(omit) }}"
+    state: present
+  loop: "{{ system_groups | default([]) }}"
+  when: system_groups is defined
+  tags: 
+    - users
+    - groups
+
+- name: "Utwórz użytkowników systemowych"
+  user:
+    name: "{{ item.name }}"
+    group: "{{ item.group | default(item.name) }}"
+    groups: "{{ item.groups | default([]) | join(',') }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    home: "{{ item.home | default('/home/' + item.name) }}"
+    create_home: "{{ item.create_home | default(true) }}"
+    uid: "{{ item.uid | default(omit) }}"
+    password: "{{ item.password | default('!') }}"
+    state: present
+  loop: "{{ system_users | default([]) }}"
+  tags: users
+
+- name: "Skonfiguruj klucze SSH dla użytkowników"
+  authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ item.1 }}"
+    state: present
+  with_subelements:
+    - "{{ system_users | default([]) }}"
+    - ssh_keys
+    - skip_missing: true
+  tags: 
+    - users
+    - ssh-keys
+
+- name: "Skonfiguruj sudo dla użytkowników"
+  template:
+    src: sudoers_user.j2
+    dest: "/etc/sudoers.d/{{ item.name }}"
+    mode: '0440'
+    owner: root
+    group: root
+    validate: 'visudo -cf %s'
+  loop: "{{ system_users | default([]) }}"
+  when: 
+    - item.sudo_access | default(false)
+    - item.sudo_rules is defined
+  tags:
+    - users
+    - sudo
+
+- name: "Usuń użytkowników z blacklisty"
+  user:
+    name: "{{ item }}"
+    state: absent
+    remove: yes
+  loop: "{{ users_to_remove | default([]) }}"
+  tags: users
+
+- name: "Sprawdź użytkowników z pustymi hasłami"
+  shell: "awk -F: '($2 == \"\") {print $1}' /etc/shadow"
+  register: empty_password_users
+  changed_when: false
+  tags: users
+
+- name: "Ostrzeżenie o użytkownikach z pustymi hasłami"
+  debug:
+    msg: "UWAGA: Użytkownicy z pustymi hasłami: {{ empty_password_users.stdout_lines | join(', ') }}"
+  when: empty_password_users.stdout_lines | length > 0
+  tags: users
+
+- name: "Sprawdź użytkowników z UID 0"
+  shell: "awk -F: '($3 == 0) {print $1}' /etc/passwd"
+  register: uid_zero_users
+  changed_when: false
+  tags: users
+
+- name: "Ostrzeżenie o użytkownikach z UID 0"
+  debug:
+    msg: "Użytkownicy z UID 0 (root privileges): {{ uid_zero_users.stdout_lines | join(', ') }}"
+  when: uid_zero_users.stdout_lines | length > 1
+  tags: users
+
+- name: "Ustaw minimalny wiek hasła"
+  replace:
+    path: /etc/login.defs
+    regexp: '^PASS_MIN_DAYS.*'
+    replace: "PASS_MIN_DAYS {{ password_policy.min_age | default(1) }}"
+  when: password_policy is defined
+  tags: 
+    - users
+    - password-policy
+
+- name: "Ustaw maksymalny wiek hasła"
+  replace:
+    path: /etc/login.defs
+    regexp: '^PASS_MAX_DAYS.*'
+    replace: "PASS_MAX_DAYS {{ password_policy.max_age | default(90) }}"
+  when: password_policy is defined
+  tags:
+    - users
+    - password-policy
+
+- name: "Ustaw ostrzeżenie o wygaśnięciu hasła"
+  replace:
+    path: /etc/login.defs
+    regexp: '^PASS_WARN_AGE.*'
+    replace: "PASS_WARN_AGE {{ password_policy.warn_age | default(7) }}"
+  when: password_policy is defined
+  tags:
+    - users
+    - password-policy
+
+- name: "Podsumowanie zarządzania użytkownikami"
+  debug:
+    msg: |
+      === PODSUMOWANIE UŻYTKOWNIKÓW ===
+      Utworzonych grup: {{ (system_groups | default([])) | length }}
+      Utworzonych użytkowników: {{ (system_users | default([])) | length }}
+      Usuniętych użytkowników: {{ (users_to_remove | default([])) | length }}
+      Użytkowników z pustymi hasłami: {{ empty_password_users.stdout_lines | length }}
+  tags: users

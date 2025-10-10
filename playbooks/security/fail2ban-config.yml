@@ -1,0 +1,85 @@
+---
+# Konfiguracja Fail2ban
+# Plik: playbooks/security/fail2ban-config.yml
+
+- name: "=== FAIL2BAN CONFIGURATION ==="
+  debug:
+    msg: "Instalacja i konfiguracja Fail2ban"
+  tags: fail2ban
+
+- name: "Zainstaluj Fail2ban"
+  package:
+    name: fail2ban
+    state: present
+  tags: fail2ban
+
+- name: "Utwórz katalog konfiguracyjny"
+  file:
+    path: /etc/fail2ban/jail.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: fail2ban
+
+- name: "Skonfiguruj główny plik jail.local"
+  template:
+    src: fail2ban-jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify: restart fail2ban
+  tags: fail2ban
+
+- name: "Skonfiguruj jail dla SSH"
+  copy:
+    content: |
+      [sshd]
+      enabled = {{ fail2ban_jails.sshd.enabled | default(true) | lower }}
+      port = {{ fail2ban_jails.sshd.port | default(ssh_config.port) }}
+      filter = {{ fail2ban_jails.sshd.filter | default('sshd') }}
+      logpath = {{ fail2ban_jails.sshd.logpath | default('/var/log/auth.log') }}
+      maxretry = {{ fail2ban_jails.sshd.maxretry | default(3) }}
+      findtime = {{ fail2ban_jails.sshd.findtime | default(600) }}
+      bantime = {{ fail2ban_jails.sshd.bantime | default(3600) }}
+      backend = {{ fail2ban_jails.sshd.backend | default('auto') }}
+    dest: /etc/fail2ban/jail.d/sshd.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fail2ban
+  when: fail2ban_jails.sshd is defined
+  tags: fail2ban
+
+- name: "Uruchom i włącz Fail2ban"
+  service:
+    name: fail2ban
+    state: started
+    enabled: true
+  tags: fail2ban
+
+- name: "Sprawdź status Fail2ban"
+  command: fail2ban-client status
+  register: fail2ban_status
+  changed_when: false
+  failed_when: false
+  tags: fail2ban
+
+- name: "Sprawdź status jail SSH"
+  command: fail2ban-client status sshd
+  register: fail2ban_sshd_status
+  changed_when: false
+  failed_when: false
+  tags: fail2ban
+
+- name: "Wyświetl status Fail2ban"
+  debug:
+    msg: |
+      === STATUS FAIL2BAN ===
+      {{ fail2ban_status.stdout }}
+      
+      === STATUS SSH JAIL ===
+      {{ fail2ban_sshd_status.stdout | default('SSH jail nie jest skonfigurowany') }}
+  tags: fail2ban

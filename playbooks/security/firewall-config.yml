@@ -1,0 +1,129 @@
+---
+# Konfiguracja firewall
+# Plik: playbooks/security/firewall-config.yml
+
+- name: "=== FIREWALL CONFIGURATION ==="
+  debug:
+    msg: "Konfiguracja zapory systemowej"
+  tags: firewall
+
+# === FIREWALLD (RedHat/CentOS) ===
+- block:
+  - name: "Zainstaluj firewalld"
+    package:
+      name: firewalld
+      state: present
+  
+  - name: "Uruchom i włącz firewalld"
+    service:
+      name: firewalld
+      state: started
+      enabled: true
+  
+  - name: "Skonfiguruj domyślną politykę"
+    firewalld:
+      zone: public
+      state: enabled
+      permanent: true
+      immediate: true
+  
+  - name: "Otwórz podstawowe porty"
+    firewalld:
+      port: "{{ item.port }}/{{ item.protocol }}"
+      zone: public
+      permanent: true
+      state: enabled
+      immediate: true
+    loop: "{{ firewall_allowed_ports | default([]) }}"
+    notify: reload firewall
+  
+  - name: "Skonfiguruj zaufane sieci"
+    firewalld:
+      source: "{{ item }}"
+      zone: trusted
+      permanent: true
+      state: enabled
+      immediate: true
+    loop: "{{ trusted_networks | default([]) }}"
+  
+  when: 
+    - ansible_os_family == "RedHat"
+    - firewall_enabled | default(true)
+  tags: firewall
+
+# === UFW (Ubuntu/Debian) ===
+- block:
+  - name: "Zainstaluj ufw"
+    package:
+      name: ufw
+      state: present
+  
+  - name: "Resetuj ufw do domyślnych ustawień"
+    ufw:
+      state: reset
+  
+  - name: "Ustaw domyślne polityki ufw"
+    ufw:
+      direction: "{{ item.direction }}"
+      policy: "{{ item.policy }}"
+    loop:
+      - { direction: 'incoming', policy: 'deny' }
+      - { direction: 'outgoing', policy: 'allow' }
+  
+  - name: "Otwórz podstawowe porty (ufw)"
+    ufw:
+      rule: allow
+      port: "{{ item.port }}"
+      proto: "{{ item.protocol }}"
+      comment: "{{ item.comment | default('') }}"
+    loop: "{{ firewall_allowed_ports | default([]) }}"
+  
+  - name: "Włącz ufw"
+    ufw:
+      state: enabled
+      logging: "on"
+  
+  when: 
+    - ansible_os_family == "Debian"
+    - firewall_enabled | default(true)
+  tags: firewall
+
+# === IPTABLES (fallback) ===
+- block:
+  - name: "Zainstaluj iptables"
+    package:
+      name: iptables
+      state: present
+  
+  - name: "Skonfiguruj podstawowe reguły iptables"
+    iptables:
+      chain: INPUT
+      protocol: tcp
+      destination_port: "{{ item.port }}"
+      jump: ACCEPT
+    loop: "{{ firewall_allowed_ports | default([]) }}"
+  
+  - name: "Zapisz konfigurację iptables"
+    shell: iptables-save > /etc/iptables/rules.v4
+    when: ansible_os_family == "Debian"
+  
+  when: 
+    - firewall_enabled | default(true)
+    - not (ansible_os_family == "RedHat" or ansible_os_family == "Debian")
+  tags: firewall
+
+- name: "Sprawdź status firewall"
+  command: "{{ firewall_status_command | default('systemctl is-active firewalld') }}"
+  register: firewall_status
+  changed_when: false
+  failed_when: false
+  tags: firewall
+
+- name: "Wyświetl status firewall"
+  debug:
+    msg: |
+      === STATUS FIREWALL ===
+      Status: {{ firewall_status.stdout | default('Unknown') }}
+      Polityka: {{ firewall_default_policy | default('deny') }}
+      Otwarte porty: {{ firewall_allowed_ports | length | default(0) }}
+  tags: firewall

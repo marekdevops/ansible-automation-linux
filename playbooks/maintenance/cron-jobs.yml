@@ -1,0 +1,51 @@
+---
+# Zarządzanie zadaniami cron
+# Plik: playbooks/maintenance/cron-jobs.yml
+
+- name: "=== ZARZĄDZANIE CRON JOBS ==="
+  debug:
+    msg: "Konfiguracja zadań cron"
+  tags: cron
+
+- name: "Skonfiguruj standardowe zadania cron"
+  cron:
+    name: "{{ item.name }}"
+    job: "{{ item.job }}"
+    minute: "{{ item.minute | default('*') }}"
+    hour: "{{ item.hour | default('*') }}"
+    day: "{{ item.day | default('*') }}"
+    month: "{{ item.month | default('*') }}"
+    weekday: "{{ item.weekday | default('*') }}"
+    user: "{{ item.user | default('root') }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ default_cron_jobs | default([]) }}"
+  tags: cron
+
+- name: "Skonfiguruj niestandardowe zadania cron"
+  cron:
+    name: "{{ item.name }}"
+    job: "{{ item.job }}"
+    minute: "{{ item.minute | default('*') }}"
+    hour: "{{ item.hour | default('*') }}"
+    day: "{{ item.day | default('*') }}"
+    month: "{{ item.month | default('*') }}"
+    weekday: "{{ item.weekday | default('*') }}"
+    user: "{{ item.user | default('root') }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ custom_cron_jobs | default([]) }}"
+  tags: cron
+
+- name: "Sprawdź istniejące zadania cron"
+  shell: crontab -l
+  register: crontab_list
+  changed_when: false
+  failed_when: false
+  tags: cron
+
+- name: "Wyświetl aktywne zadania cron"
+  debug:
+    msg: |
+      === AKTYWNE ZADANIA CRON ===
+      {{ crontab_list.stdout }}
+  when: crontab_list.stdout != ""
+  tags: cron

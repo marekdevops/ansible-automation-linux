@@ -1,0 +1,19 @@
+# DNS resolver configuration
+# Wygenerowano przez Ansible - {{ ansible_date_time.iso8601 }}
+
+# Serwery DNS
+{% for nameserver in dns_config.nameservers %}
+nameserver {{ nameserver }}
+{% endfor %}
+
+# Domeny wyszukiwania
+{% if dns_config.search_domains is defined and dns_config.search_domains | length > 0 %}
+search {{ dns_config.search_domains | join(' ') }}
+{% endif %}
+
+# Opcje resolv
+{% if dns_config.options is defined %}
+{% for option in dns_config.options %}
+options {{ option }}
+{% endfor %}
+{% endif %}

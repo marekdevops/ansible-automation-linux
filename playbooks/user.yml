@@ -1,0 +1,166 @@
+---
+# Moduł zarządzania użytkownikami
+# Plik: playbooks/user.yml
+# Użycie: ./run-automation.sh user -e "user=nazwa home=sciezka"
+
+- name: "USER MODULE - Zarządzanie użytkownikami"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Domyślne wartości
+    user_name: "{{ user | default('') }}"
+    user_home_input: "{{ home | default('default') }}"
+    user_shell: "{{ shell | default('/bin/bash') }}"
+    user_groups: "{{ groups | default('') }}"
+    user_password: "{{ password | default('') }}"
+    user_ssh_key: "{{ ssh_key | default('') }}"
+    user_sudo: "{{ sudo | default('false') }}"
+    
+    # Logika dla katalogu domowego
+    user_home_dir: >-
+      {% if user_home_input == 'default' -%}
+        /home/{{ user_name }}
+      {%- elif user_home_input.startswith('/') -%}
+        {{ user_home_input }}
+      {%- else -%}
+        /home/{{ user_home_input }}
+      {%- endif %}
+
+  pre_tasks:
+    - name: "Sprawdź czy podano nazwę użytkownika"
+      fail:
+        msg: "Musisz podać nazwę użytkownika! Użyj: -e 'user=nazwa'"
+      when: user_name == ""
+      tags: always
+
+    - name: "Wyświetl informacje o tworzeniu użytkownika"
+      debug:
+        msg: |
+          === TWORZENIE UŻYTKOWNIKA ===
+          Użytkownik: {{ user_name }}
+          Katalog domowy: {{ user_home_dir }}
+          Shell: {{ user_shell }}
+          Grupy: {{ user_groups if user_groups != '' else 'brak dodatkowych' }}
+          Sudo: {{ 'Tak' if user_sudo | bool else 'Nie' }}
+      tags: always
+
+  tasks:
+    - name: "Sprawdź czy użytkownik już istnieje"
+      getent:
+        database: passwd
+        key: "{{ user_name }}"
+      register: user_exists
+      failed_when: false
+      tags: user
+
+    - name: "Informacja o istniejącym użytkowniku"
+      debug:
+        msg: "Użytkownik {{ user_name }} już istnieje. Aktualizuję konfigurację..."
+      when: user_exists.ansible_facts is defined
+      tags: user
+
+    - name: "Utwórz katalog domowy (jeśli niestandardowy)"
+      file:
+        path: "{{ user_home_dir | dirname }}"
+        state: directory
+        mode: '0755'
+      when: 
+        - user_home_dir != '/home/' + user_name
+        - not user_home_dir.startswith('/home/')
+      tags: user
+
+    - name: "Utwórz użytkownika"
+      user:
+        name: "{{ user_name }}"
+        home: "{{ user_home_dir }}"
+        shell: "{{ user_shell }}"
+        groups: "{{ user_groups.split(',') if user_groups != '' else [] }}"
+        append: true
+        create_home: true
+        state: present
+        password: "{{ user_password | password_hash('sha512') if user_password != '' else omit }}"
+      register: user_created
+      tags: user
+
+    - name: "Ustaw właściciela katalogu domowego"
+      file:
+        path: "{{ user_home_dir }}"
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        recurse: true
+      tags: user
+
+    - name: "Dodaj użytkownika do sudoers (jeśli włączone)"
+      user:
+        name: "{{ user_name }}"
+        groups: "sudo"
+        append: true
+      when: user_sudo | bool
+      tags:
+        - user
+        - sudo
+
+    - name: "Utwórz katalog .ssh"
+      file:
+        path: "{{ user_home_dir }}/.ssh"
+        state: directory
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: '0700'
+      when: user_ssh_key != ""
+      tags:
+        - user
+        - ssh
+
+    - name: "Dodaj klucz SSH"
+      authorized_key:
+        user: "{{ user_name }}"
+        key: "{{ user_ssh_key }}"
+        state: present
+      when: user_ssh_key != ""
+      tags:
+        - user
+        - ssh
+
+    - name: "Sprawdź utworzonego użytkownika"
+      getent:
+        database: passwd
+        key: "{{ user_name }}"
+      register: final_user_info
+      tags: user
+
+    - name: "Wyświetl informacje o użytkowniku"
+      debug:
+        msg: |
+          === UŻYTKOWNIK UTWORZONY ===
+          Login: {{ user_name }}
+          UID: {{ final_user_info.ansible_facts.getent_passwd[user_name][1] }}
+          GID: {{ final_user_info.ansible_facts.getent_passwd[user_name][2] }}
+          Katalog: {{ final_user_info.ansible_facts.getent_passwd[user_name][4] }}
+          Shell: {{ final_user_info.ansible_facts.getent_passwd[user_name][5] }}
+          Status: {{ 'Zaktualizowany' if user_exists.ansible_facts is defined else 'Nowy' }}
+      tags: user
+
+    - name: "Sprawdź dostęp sudo"
+      shell: "groups {{ user_name }} | grep -o sudo || echo 'brak'"
+      register: sudo_check
+      changed_when: false
+      tags: user
+
+    - name: "Wyświetl podsumowanie"
+      debug:
+        msg: |
+          === PODSUMOWANIE ===
+          Użytkownik {{ user_name }} został {{ 'zaktualizowany' if user_exists.ansible_facts is defined else 'utworzony' }}
+          Katalog domowy: {{ user_home_dir }}
+          Dostęp sudo: {{ 'Tak' if 'sudo' in sudo_check.stdout else 'Nie' }}
+          
+          Aby zalogować się jako {{ user_name }}:
+          sudo su - {{ user_name }}
+          
+          {% if user_ssh_key != "" %}
+          SSH Key został skonfigurowany.
+          {% endif %}
+      tags: user

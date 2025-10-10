@@ -1,0 +1,57 @@
+---
+# Główny playbook dla zadań systemowych
+# Plik: playbooks/system/main.yml
+
+- name: "=== SYSTEM TASKS - START ==="
+  debug:
+    msg: "Rozpoczynam zadania systemowe..."
+  tags: always
+
+# === AKTUALIZACJA SYSTEMU ===
+- name: "Include System Update Tasks"
+  include_tasks: system-update.yml
+  when: enable_system_update | default(true) | bool
+  tags:
+    - update
+    - packages
+
+# === ZARZĄDZANIE UŻYTKOWNIKAMI ===
+- name: "Include User Management Tasks" 
+  include_tasks: user-management.yml
+  when: system_users is defined and system_users | length > 0
+  tags:
+    - users
+    - accounts
+
+# === KONFIGURACJA CZASU ===
+- name: "Include Time Configuration Tasks"
+  include_tasks: time-config.yml
+  when: time_sync_enabled | default(true) | bool
+  tags:
+    - time
+    - ntp
+
+# === KONFIGURACJA SYSTEMU ===
+- name: "Include System Configuration Tasks"
+  include_tasks: system-config.yml
+  tags:
+    - config
+    - tuning
+
+# === ZARZĄDZANIE USŁUGAMI ===
+- name: "Include Service Management Tasks"
+  include_tasks: service-management.yml
+  tags:
+    - services
+
+# === PAKIETY I NARZĘDZIA ===
+- name: "Include Package Management Tasks"
+  include_tasks: package-management.yml
+  tags:
+    - packages
+    - tools
+
+- name: "=== SYSTEM TASKS - END ==="
+  debug:
+    msg: "Zakończono zadania systemowe."
+  tags: always

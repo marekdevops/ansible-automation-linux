@@ -1,0 +1,76 @@
+---
+# Zarządzanie pakietami i narzędziami
+# Plik: playbooks/system/package-management.yml
+
+- name: "=== ZARZĄDZANIE PAKIETAMI ==="
+  debug:
+    msg: "Instalacja i konfiguracja pakietów"
+  tags: packages
+
+- name: "Zainstaluj podstawowe pakiety"
+  package:
+    name: "{{ essential_packages }}"
+    state: present
+  when: essential_packages is defined
+  tags:
+    - packages
+    - essential
+
+- name: "Zainstaluj pakiety specyficzne dla dystrybucji (RedHat)"
+  package:
+    name: "{{ distribution_packages.RedHat }}"
+    state: present
+  when: 
+    - ansible_os_family == "RedHat"
+    - distribution_packages.RedHat is defined
+  tags: packages
+
+- name: "Zainstaluj pakiety specyficzne dla dystrybucji (Debian)" 
+  package:
+    name: "{{ distribution_packages.Debian }}"
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - distribution_packages.Debian is defined
+  tags: packages
+
+- name: "Zainstaluj narzędzia deweloperskie (opcjonalnie)"
+  package:
+    name: "{{ development_packages }}"
+    state: present
+  when: 
+    - install_dev_tools | default(false)
+    - development_packages is defined
+  tags:
+    - packages
+    - development
+
+- name: "Zainstaluj narzędzia systemowe"
+  package:
+    name: "{{ system_tools }}"
+    state: present
+  when: 
+    - install_system_tools | default(true)
+    - system_tools is defined
+  tags:
+    - packages
+    - system-tools
+
+- name: "Usuń niepotrzebne pakiety"
+  package:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ packages_to_remove | default([]) }}"
+  tags: packages
+
+- name: "Wyczyść cache pakietów (Debian/Ubuntu)"
+  apt:
+    autoclean: yes
+    autoremove: yes
+  when: ansible_os_family == "Debian"
+  tags: packages
+
+- name: "Wyczyść cache pakietów (RedHat/CentOS)"
+  command: yum clean all
+  when: ansible_os_family == "RedHat"
+  tags: packages

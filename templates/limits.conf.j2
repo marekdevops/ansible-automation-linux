@@ -1,0 +1,21 @@
+# System limits configuration
+# Wygenerowano przez Ansible - {{ ansible_date_time.iso8601 }}
+
+# Domyślne limity dla wszystkich użytkowników
+*               soft    nofile          65536
+*               hard    nofile          65536
+*               soft    nproc           32768
+*               hard    nproc           32768
+
+# Dodatkowe limity z konfiguracji
+{% if system_limits_config is defined %}
+{% for limit in system_limits_config %}
+{{ "%-15s %-7s %-15s %s" | format(limit.domain, limit.type, limit.item, limit.value) }}
+{% endfor %}
+{% endif %}
+
+# Limity dla użytkowników root
+root            soft    nofile          65536
+root            hard    nofile          65536
+
+# End of file

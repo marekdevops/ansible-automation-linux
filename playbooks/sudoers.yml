@@ -1,0 +1,164 @@
+---
+# Moduł SUDOERS - Konfiguracja uprawnień sudo dla użytkowników
+# Plik: playbooks/sudoers.yml
+# Użycie: ./run-automation.sh sudoers -e "user=nazwa"
+
+- name: "SUDOERS MODULE - Konfiguracja uprawnień sudo"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Podstawowe zmienne
+    sudoers_user: "{{ user | default('') }}"
+    sudoers_commands_file: "{{ commands_file | default('sudo_commands') }}"
+    sudoers_file_priority: "{{ priority | default('98') }}"
+    
+    # Ścieżki
+    sudoers_dir: "/etc/sudoers.d"
+    sudoers_file_path: "{{ sudoers_dir }}/{{ sudoers_file_priority }}-{{ sudoers_user }}"
+    commands_template_path: "templates/{{ sudoers_commands_file }}"
+
+  pre_tasks:
+    - name: "Sprawdź czy podano nazwę użytkownika"
+      fail:
+        msg: |
+          Musisz podać nazwę użytkownika! 
+          Użyj: ./run-automation.sh sudoers -e "user=nazwa_uzytkownika"
+      when: sudoers_user == ""
+      tags: always
+
+    - name: "Sprawdź czy użytkownik istnieje w systemie"
+      getent:
+        database: passwd
+        key: "{{ sudoers_user }}"
+      register: user_exists_check
+      failed_when: user_exists_check.failed
+      tags: always
+
+    - name: "Wyświetl informacje o konfiguracji sudoers"
+      debug:
+        msg: |
+          === KONFIGURACJA SUDOERS ===
+          Użytkownik: {{ sudoers_user }}
+          Plik sudoers: {{ sudoers_file_path }}
+          Szablon komend: {{ sudoers_commands_file }}
+          Priorytet: {{ sudoers_file_priority }}
+      tags: always
+
+  tasks:
+    - name: "Sprawdź czy katalog sudoers.d istnieje"
+      file:
+        path: "{{ sudoers_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0750'
+      tags: sudoers
+
+    - name: "Wczytaj komendy z pliku szablonu"
+      slurp:
+        src: "{{ commands_template_path }}"
+      register: commands_content
+      delegate_to: localhost
+      become: false
+      tags: sudoers
+
+    - name: "Przetwórz komendy z szablonu"
+      set_fact:
+        sudoers_commands: "{{ (commands_content.content | b64decode).split('\n') }}"
+      tags: sudoers
+
+    - name: "Wyświetl komendy do skonfigurowania"
+      debug:
+        msg: |
+          === KOMENDY SUDO DLA {{ sudoers_user | upper }} ===
+          {% for line in sudoers_commands %}
+          {% if line.strip() and not line.strip().startswith('#') %}
+          {% set commands = line.split(';') %}
+          {% for command in commands %}
+          {% if command.strip() %}
+          - {{ command.strip() }}
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+      tags: sudoers
+
+    - name: "Utwórz backup istniejącego pliku sudoers (jeśli istnieje)"
+      copy:
+        src: "{{ sudoers_file_path }}"
+        dest: "{{ sudoers_file_path }}.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+        owner: root
+        group: root
+        mode: '0440'
+      when: ansible_check_mode == false
+      failed_when: false
+      tags: sudoers
+
+    - name: "Wygeneruj plik sudoers dla użytkownika"
+      template:
+        src: sudoers_user.j2
+        dest: "{{ sudoers_file_path }}"
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+        backup: yes
+      register: sudoers_created
+      tags: sudoers
+
+    - name: "Sprawdź składnię wszystkich plików sudoers"
+      command: visudo -c
+      register: visudo_check
+      changed_when: false
+      failed_when: visudo_check.rc != 0
+      tags: sudoers
+
+    - name: "Wyświetl zawartość utworzonego pliku"
+      slurp:
+        src: "{{ sudoers_file_path }}"
+      register: sudoers_file_content
+      tags: sudoers
+
+    - name: "Pokaż zawartość pliku sudoers"
+      debug:
+        msg: |
+          === ZAWARTOŚĆ PLIKU {{ sudoers_file_path }} ===
+          {{ sudoers_file_content.content | b64decode }}
+      tags: sudoers
+
+    - name: "Test uprawnień sudo dla użytkownika"
+      shell: |
+        # Sprawdź czy użytkownik może używać sudo -l
+        sudo -l -U {{ sudoers_user }} | grep -E "(NOPASSWD|{{ sudoers_user }})" || echo "Brak uprawnień"
+      register: sudo_test
+      changed_when: false
+      failed_when: false
+      tags: sudoers
+
+    - name: "Wyświetl podsumowanie"
+      debug:
+        msg: |
+          === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+          Użytkownik: {{ sudoers_user }}
+          Plik sudoers: {{ sudoers_file_path }}
+          Status: {{ 'Utworzony' if sudoers_created.changed else 'Już istniał' }}
+          Walidacja: {{ 'Pomyślna' if visudo_check.rc == 0 else 'Błąd' }}
+          
+          === SPRAWDZENIE UPRAWNIEŃ ===
+          {{ sudo_test.stdout }}
+          
+          === TESTOWANIE ===
+          Aby przetestować uprawnienia, zaloguj się jako {{ sudoers_user }}:
+          sudo su - {{ sudoers_user }}
+          
+          Następnie sprawdź dostępne komendy:
+          sudo -l
+          
+          === ZARZĄDZANIE ===
+          Plik konfiguracyjny: {{ sudoers_file_path }}
+          Edytuj szablon komend: {{ commands_template_path }}
+          Usuń uprawnienia: sudo rm {{ sudoers_file_path }}
+      tags: sudoers

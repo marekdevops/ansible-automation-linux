@@ -1,0 +1,6 @@
+# Komendy dla webmastera
+/usr/bin/systemctl restart nginx;/usr/bin/systemctl reload nginx;/usr/bin/systemctl status nginx
+/usr/bin/systemctl restart apache2;/usr/bin/systemctl reload apache2;/usr/bin/systemctl status apache2
+/bin/chmod +x /var/www/scripts/*;/bin/chown www-data:www-data /var/www/html/*
+/usr/bin/tail -f /var/log/nginx/*.log;/usr/bin/tail -f /var/log/apache2/*.log
+/usr/bin/certbot renew;/usr/bin/certbot certificates

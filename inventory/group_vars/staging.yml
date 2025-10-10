@@ -1,0 +1,28 @@
+---
+# Zmienne dla środowiska staging
+
+# System settings
+update_system: true
+reboot_after_update: true
+install_essential_packages: true
+
+# Security settings (mniej restrykcyjne)
+enable_firewall: false
+ssh_port: 22
+disable_root_login: false
+install_fail2ban: false
+
+# Monitoring (ograniczone)
+monitoring_enabled: false
+log_retention_days: 7
+
+# Backup (wyłączone)
+backup_enabled: false
+
+# Services (podstawowe)
+nginx_worker_processes: 1
+mysql_max_connections: 50
+
+# Maintenance (częstsze)
+cleanup_enabled: true
+cleanup_schedule: "0 4 * * *"  # Codziennie o 4:00

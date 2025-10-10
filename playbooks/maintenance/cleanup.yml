@@ -1,0 +1,87 @@
+---
+# Czyszczenie systemu
+# Plik: playbooks/maintenance/cleanup.yml
+
+- name: "=== SYSTEM CLEANUP ==="
+  debug:
+    msg: "Czyszczenie niepotrzebnych plików systemowych"
+  tags: cleanup
+
+- name: "Wyczyść stare logi (starsze niż 30 dni)"
+  find:
+    paths:
+      - /var/log
+    patterns: "*.log.*"
+    age: "30d"
+    recurse: yes
+  register: old_logs
+  tags: cleanup
+
+- name: "Usuń stare logi"
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_logs.files }}"
+  when: old_logs.files | length > 0
+  tags: cleanup
+
+- name: "Wyczyść cache pakietów (Debian/Ubuntu)"
+  apt:
+    autoclean: yes
+    autoremove: yes
+  when: ansible_os_family == "Debian"
+  tags: cleanup
+
+- name: "Wyczyść cache pakietów (RedHat/CentOS)"
+  command: yum clean all
+  when: ansible_os_family == "RedHat"
+  tags: cleanup
+
+- name: "Wyczyść katalog /tmp (pliki starsze niż 7 dni)"
+  find:
+    paths: /tmp
+    age: "7d"
+    file_type: file
+  register: tmp_files
+  tags: cleanup
+
+- name: "Usuń stare pliki z /tmp"
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ tmp_files.files }}"
+  when: tmp_files.files | length > 0
+  tags: cleanup
+
+- name: "Sprawdź wykorzystanie dysku przed czyszczeniem"
+  shell: df -h / | awk 'NR==2 {print $5}' | sed 's/%//'
+  register: disk_usage_before
+  changed_when: false
+  tags: cleanup
+
+- name: "Kompresuj stare logi"
+  shell: |
+    find /var/log -name "*.log" -type f -mtime +7 -exec gzip {} \;
+  tags: cleanup
+
+- name: "Wyczyść journalctl logs"
+  command: journalctl --vacuum-time=30d
+  when: ansible_service_mgr == "systemd"
+  tags: cleanup
+
+- name: "Sprawdź wykorzystanie dysku po czyszczeniu"
+  shell: df -h / | awk 'NR==2 {print $5}' | sed 's/%//'
+  register: disk_usage_after
+  changed_when: false
+  tags: cleanup
+
+- name: "Podsumowanie czyszczenia"
+  debug:
+    msg: |
+      === PODSUMOWANIE CZYSZCZENIA ===
+      Wykorzystanie dysku przed: {{ disk_usage_before.stdout }}%
+      Wykorzystanie dysku po: {{ disk_usage_after.stdout }}%
+      Oszczędność: {{ (disk_usage_before.stdout|int - disk_usage_after.stdout|int) }}%
+      Usuniętych logów: {{ old_logs.files | length }}
+      Usuniętych plików z /tmp: {{ tmp_files.files | length }}
+  tags: cleanup

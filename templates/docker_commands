@@ -1,0 +1,6 @@
+# Komendy Docker dla administratora
+/usr/bin/docker ps;/usr/bin/docker images;/usr/bin/docker logs *
+/usr/bin/docker start *;/usr/bin/docker stop *;/usr/bin/docker restart *
+/usr/bin/docker-compose up -d;/usr/bin/docker-compose down;/usr/bin/docker-compose restart
+/usr/bin/docker system prune -f;/usr/bin/docker volume prune -f
+/usr/bin/docker exec -it * bash;/usr/bin/docker exec -it * sh

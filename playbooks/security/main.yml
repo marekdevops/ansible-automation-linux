@@ -1,0 +1,62 @@
+---
+# Główny playbook dla zadań bezpieczeństwa
+# Plik: playbooks/security/main.yml
+
+- name: "=== SECURITY TASKS - START ==="
+  debug:
+    msg: "Rozpoczynam zadania bezpieczeństwa..."
+  tags: always
+
+# === KONFIGURACJA SSH ===
+- name: "Include SSH Hardening Tasks"
+  include_tasks: ssh-hardening.yml
+  when: enable_security_hardening | default(true) | bool
+  tags:
+    - security
+    - ssh
+    - hardening
+
+# === KONFIGURACJA FIREWALL ===
+- name: "Include Firewall Configuration Tasks"
+  include_tasks: firewall-config.yml
+  when: firewall_enabled | default(true) | bool
+  tags:
+    - security
+    - firewall
+
+# === FAIL2BAN ===
+- name: "Include Fail2ban Configuration Tasks"
+  include_tasks: fail2ban-config.yml
+  when: fail2ban_enabled | default(true) | bool
+  tags:
+    - security
+    - fail2ban
+
+# === HARDENING SYSTEMOWY ===
+- name: "Include System Hardening Tasks"
+  include_tasks: system-hardening.yml
+  when: enable_security_hardening | default(true) | bool
+  tags:
+    - security
+    - hardening
+    - sysctl
+
+# === AUDYT I MONITORING ===
+- name: "Include Security Auditing Tasks"
+  include_tasks: security-audit.yml
+  when: auditd_enabled | default(false) | bool
+  tags:
+    - security
+    - audit
+
+# === UPRAWNIENIA PLIKÓW ===
+- name: "Include File Permissions Tasks"
+  include_tasks: file-permissions.yml
+  tags:
+    - security
+    - permissions
+
+- name: "=== SECURITY TASKS - END ==="
+  debug:
+    msg: "Zakończono zadania bezpieczeństwa."
+  tags: always

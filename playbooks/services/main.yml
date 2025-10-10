@@ -1,0 +1,52 @@
+---
+# Główny playbook dla usług
+# Plik: playbooks/services/main.yml
+
+- name: "=== SERVICES TASKS - START ==="
+  debug:
+    msg: "Rozpoczynam instalację i konfigurację usług..."
+  tags: always
+
+# === WEB SERWER ===
+- name: "Include Web Server Tasks"
+  include_tasks: web-server.yml
+  when: install_nginx | default(false) or install_apache | default(false)
+  tags:
+    - services
+    - web
+    - nginx
+    - apache
+
+# === BAZY DANYCH ===
+- name: "Include Database Server Tasks"
+  include_tasks: database.yml
+  when: install_mysql | default(false) or install_postgresql | default(false)
+  tags:
+    - services
+    - database
+    - mysql
+    - postgresql
+
+# === DOCKER ===
+- name: "Include Docker Tasks"
+  include_tasks: docker.yml
+  when: install_docker | default(false)
+  tags:
+    - services
+    - docker
+    - containers
+
+# === CACHE/REDIS ===
+- name: "Include Cache Server Tasks"
+  include_tasks: cache-server.yml
+  when: install_redis | default(false) or install_memcached | default(false)
+  tags:
+    - services
+    - cache
+    - redis
+    - memcached
+
+- name: "=== SERVICES TASKS - END ==="
+  debug:
+    msg: "Zakończono instalację usług."
+  tags: always

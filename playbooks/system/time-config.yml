@@ -1,0 +1,171 @@
+---
+# Konfiguracja czasu i synchronizacji NTP
+# Plik: playbooks/system/time-config.yml
+
+- name: "=== KONFIGURACJA CZASU I NTP ==="
+  debug:
+    msg: "Konfiguracja synchronizacji czasu"
+  tags: time
+
+- name: "Ustaw strefę czasową"
+  timezone:
+    name: "{{ timezone | default('Europe/Warsaw') }}"
+  notify: restart chronyd
+  tags: 
+    - time
+    - timezone
+
+- name: "Zainstaluj chrony (RedHat/CentOS)"
+  package:
+    name: chrony
+    state: present
+  when: 
+    - ansible_os_family == "RedHat"
+    - ntp_service == "chronyd"
+  tags:
+    - time
+    - packages
+
+- name: "Zainstaluj chrony (Debian/Ubuntu)"
+  package:
+    name: chrony
+    state: present
+  when: 
+    - ansible_os_family == "Debian"
+    - ntp_service == "chronyd"
+  tags:
+    - time
+    - packages
+
+- name: "Zainstaluj ntp (alternatywnie)"
+  package:
+    name: ntp
+    state: present
+  when: ntp_service == "ntp"
+  tags:
+    - time
+    - packages
+
+- name: "Skonfiguruj chrony"
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart chronyd
+  when: ntp_service == "chronyd"
+  tags:
+    - time
+    - config
+
+- name: "Skonfiguruj NTP"
+  template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart ntp
+  when: ntp_service == "ntp"
+  tags:
+    - time
+    - config
+
+- name: "Uruchom i włącz usługę chronyd"
+  service:
+    name: chronyd
+    state: started
+    enabled: true
+  when: ntp_service == "chronyd"
+  tags:
+    - time
+    - services
+
+- name: "Uruchom i włącz usługę NTP"
+  service:
+    name: ntp
+    state: started
+    enabled: true
+  when: ntp_service == "ntp"
+  tags:
+    - time
+    - services
+
+- name: "Zatrzymaj usługę systemd-timesyncd (konflikt z chrony)"
+  service:
+    name: systemd-timesyncd
+    state: stopped
+    enabled: false
+  failed_when: false
+  when: 
+    - ntp_service == "chronyd"
+    - ansible_service_mgr == "systemd"
+  tags:
+    - time
+    - services
+
+- name: "Sprawdź synchronizację czasu (chrony)"
+  command: chronyc sources
+  register: chrony_sources
+  changed_when: false
+  failed_when: false
+  when: ntp_service == "chronyd"
+  tags:
+    - time
+    - check
+
+- name: "Sprawdź synchronizację czasu (ntp)"
+  command: ntpq -p
+  register: ntp_peers
+  changed_when: false
+  failed_when: false
+  when: ntp_service == "ntp"
+  tags:
+    - time
+    - check
+
+- name: "Wyświetl status synchronizacji (chrony)"
+  debug:
+    msg: |
+      === STATUS CHRONYD ===
+      {{ chrony_sources.stdout }}
+  when: 
+    - ntp_service == "chronyd"
+    - chrony_sources.rc == 0
+  tags: time
+
+- name: "Wyświetl status synchronizacji (ntp)"
+  debug:
+    msg: |
+      === STATUS NTP ===
+      {{ ntp_peers.stdout }}
+  when:
+    - ntp_service == "ntp" 
+    - ntp_peers.rc == 0
+  tags: time
+
+- name: "Sprawdź aktualny czas systemowy"
+  command: date
+  register: current_time
+  changed_when: false
+  tags: time
+
+- name: "Sprawdź aktualną strefę czasową"
+  command: timedatectl show --property=Timezone --value
+  register: current_timezone
+  changed_when: false
+  when: ansible_service_mgr == "systemd"
+  tags: time
+
+- name: "Podsumowanie konfiguracji czasu"
+  debug:
+    msg: |
+      === KONFIGURACJA CZASU ===
+      Aktualny czas: {{ current_time.stdout }}
+      Strefa czasowa: {{ current_timezone.stdout | default('Unknown') }}
+      Usługa NTP: {{ ntp_service }}
+      Serwery NTP: {{ ntp_servers | join(', ') }}
+  tags: time

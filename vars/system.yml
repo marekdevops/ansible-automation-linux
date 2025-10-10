@@ -1,0 +1,250 @@
+---
+# Zmienne systemowe
+# Plik: vars/system.yml
+
+# ===============================================
+# AKTUALIZACJE SYSTEMU
+# ===============================================
+
+# Konfiguracja aktualizacji
+system_update_config:
+  cache_update: true
+  upgrade_all: "{{ update_system | default(true) }}"
+  autoremove: true
+  autoclean: true
+
+# Pakiety do wykluczenia z aktualizacji
+excluded_packages: []
+  # - kernel
+  # - mysql-server
+
+# Automatyczne aktualizacje
+auto_updates_enabled: false
+auto_updates_config:
+  unattended_upgrades: true
+  automatic_reboot: false
+  reboot_time: "02:00"
+
+# ===============================================
+# ZARZĄDZANIE PAKIETAMI
+# ===============================================
+
+# Repozytoria dla różnych dystrybucji
+repositories:
+  RedHat:
+    - name: epel
+      description: "Extra Packages for Enterprise Linux"
+      enabled: true
+  Debian:
+    - name: main
+      components: "main contrib non-free"
+    - name: security
+      components: "main contrib non-free"
+  Ubuntu:
+    - name: universe
+      components: "universe multiverse"
+
+# Pakiety deweloperskie (opcjonalnie)
+development_packages:
+  - build-essential
+  - gcc
+  - make
+  - cmake
+  - python3-pip
+  - nodejs
+  - npm
+
+# Narzędzia systemowe
+system_tools:
+  - iotop
+  - nethogs
+  - nmap
+  - tcpdump
+  - strace
+  - lsof
+  - dstat
+
+# ===============================================
+# USŁUGI SYSTEMOWE
+# ===============================================
+
+# Usługi do włączenia
+services_to_enable:
+  - name: chronyd
+    state: started
+    enabled: true
+  - name: rsyslog
+    state: started
+    enabled: true
+  - name: cron
+    state: started
+    enabled: true
+
+# Usługi do wyłączenia
+services_to_disable:
+  - cups
+  - avahi-daemon
+  - bluetooth
+
+# ===============================================
+# KONFIGURACJA CZASU
+# ===============================================
+
+# NTP/Chrony configuration
+time_sync_enabled: true
+ntp_service: chronyd
+
+# Chrony configuration
+chrony_config:
+  servers: "{{ ntp_servers }}"
+  stratumweight: 0
+  driftfile: /var/lib/chrony/drift
+  rtcsync: true
+  makestep: "1.0 3"
+  bindcmdaddress:
+    - "127.0.0.1"
+    - "::1"
+
+# ===============================================
+# LIMITY SYSTEMOWE
+# ===============================================
+
+# Limits.conf configuration
+system_limits_config:
+  - domain: "*"
+    type: soft
+    item: nofile
+    value: 65536
+  - domain: "*"
+    type: hard
+    item: nofile
+    value: 65536
+  - domain: "*"
+    type: soft
+    item: nproc
+    value: 32768
+  - domain: "*"
+    type: hard
+    item: nproc
+    value: 32768
+
+# ===============================================
+# KONFIGURACJA JĄDRA
+# ===============================================
+
+# Sysctl parameters dla wydajności
+performance_sysctl_params:
+  - name: "vm.swappiness"
+    value: "{{ vm_swappiness | default(10) }}"
+  - name: "vm.dirty_ratio"
+    value: "15"
+  - name: "vm.dirty_background_ratio"
+    value: "5"
+  - name: "net.core.somaxconn"
+    value: "1024"
+  - name: "net.core.netdev_max_backlog"
+    value: "5000"
+  - name: "net.ipv4.tcp_keepalive_time"
+    value: "600"
+  - name: "net.ipv4.tcp_keepalive_intvl"
+    value: "60"
+  - name: "net.ipv4.tcp_keepalive_probes"
+    value: "10"
+
+# Modules to load
+kernel_modules:
+  - name: "tcp_bbr"
+    state: present
+
+# ===============================================
+# SYSTEM MONITORING
+# ===============================================
+
+# System metrics collection
+system_monitoring:
+  collect_metrics: true
+  metrics_interval: 60
+  retain_days: 30
+
+# Log rotation configuration
+logrotate_configs:
+  - name: system-logs
+    paths:
+      - /var/log/automation/*.log
+    options:
+      - daily
+      - rotate 7
+      - compress
+      - delaycompress
+      - missingok
+      - notifempty
+
+# ===============================================
+# CRON JOBS
+# ===============================================
+
+# Standardowe zadania cron
+default_cron_jobs:
+  - name: "System update check"
+    job: "/opt/scripts/check-updates.sh"
+    minute: "0"
+    hour: "6"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    user: root
+    state: present
+
+  - name: "Log cleanup"
+    job: "find /var/log -name '*.log' -mtime +30 -delete"
+    minute: "0" 
+    hour: "2"
+    day: "*"
+    month: "*"
+    weekday: "0"
+    user: root
+    state: present
+
+# ===============================================
+# SWAP CONFIGURATION
+# ===============================================
+
+# Swap management
+swap_configuration:
+  manage_swap: false
+  swap_size: "2G"
+  swap_file_path: "/swapfile"
+
+# ===============================================
+# DISK MANAGEMENT
+# ===============================================
+
+# Filesystem monitoring
+filesystem_monitoring:
+  warn_threshold: 80
+  critical_threshold: 90
+  check_interval: 300
+
+# Mount options
+default_mount_options:
+  ext4: "defaults,noatime,nodiratime"
+  xfs: "defaults,noatime,nodiratime"
+
+# ===============================================
+# NETWORK CONFIGURATION
+# ===============================================
+
+# Network tuning
+network_tuning:
+  tcp_window_scaling: true
+  tcp_timestamps: true
+  tcp_sack: true
+  tcp_fack: true
+
+# DNS configuration
+dns_config:
+  nameservers: "{{ dns_servers }}"
+  search_domains: []
+  options:
+    - "timeout:2"
+    - "attempts:2"

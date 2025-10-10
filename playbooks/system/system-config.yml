@@ -1,0 +1,190 @@
+---
+# Konfiguracja systemu i tuningu wydajności
+# Plik: playbooks/system/system-config.yml
+
+- name: "=== KONFIGURACJA SYSTEMU ==="
+  debug:
+    msg: "Konfiguracja parametrów systemowych i tuning wydajności"
+  tags: config
+
+- name: "Ustaw hostname"
+  hostname:
+    name: "{{ hostname }}"
+  when: 
+    - set_hostname | default(false)
+    - hostname is defined
+    - hostname != ansible_hostname
+  tags:
+    - config
+    - hostname
+
+- name: "Skonfiguruj /etc/hosts"
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ hostname | default(ansible_hostname) }}"
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - config
+    - hostname
+
+- name: "Skonfiguruj parametry sysctl dla wydajności"
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+    sysctl_file: /etc/sysctl.d/99-performance.conf
+  loop: "{{ performance_sysctl_params | default([]) }}"
+  tags:
+    - config
+    - tuning
+    - sysctl
+
+- name: "Skonfiguruj limity systemowe"
+  pam_limits:
+    domain: "{{ item.domain }}"
+    limit_type: "{{ item.type }}"
+    limit_item: "{{ item.item }}"
+    value: "{{ item.value }}"
+  loop: "{{ system_limits_config | default([]) }}"
+  tags:
+    - config
+    - limits
+
+- name: "Utwórz plik konfiguracyjny limits.conf"
+  template:
+    src: limits.conf.j2
+    dest: /etc/security/limits.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: '0644'
+  when: system_limits_config is defined
+  tags:
+    - config
+    - limits
+
+- name: "Załaduj moduły jądra"
+  modprobe:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ kernel_modules | default([]) }}"
+  tags:
+    - config
+    - kernel
+
+- name: "Skonfiguruj automatyczne ładowanie modułów"
+  lineinfile:
+    path: /etc/modules-load.d/automation.conf
+    line: "{{ item.name }}"
+    create: yes
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ kernel_modules | default([]) }}"
+  when: item.state | default('present') == 'present'
+  tags:
+    - config
+    - kernel
+
+- name: "Skonfiguruj DNS resolvers"
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: '0644'
+  when: dns_config is defined
+  tags:
+    - config
+    - dns
+
+- name: "Skonfiguruj locale"
+  locale_gen:
+    name: "{{ locale | default('pl_PL.UTF-8') }}"
+    state: present
+  when: ansible_os_family == "Debian"
+  tags:
+    - config
+    - locale
+
+- name: "Ustaw domyślne locale"
+  command: localectl set-locale LANG="{{ locale | default('pl_PL.UTF-8') }}"
+  when: 
+    - ansible_service_mgr == "systemd"
+    - locale is defined
+  tags:
+    - config
+    - locale
+
+- name: "Skonfiguruj logrotate dla logów automatyzacji"
+  template:
+    src: logrotate.j2
+    dest: "/etc/logrotate.d/{{ item.name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ logrotate_configs | default([]) }}"
+  tags:
+    - config
+    - logs
+
+- name: "Utwórz katalogi dla logów"
+  file:
+    path: "{{ item | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ log_paths.values() | list }}"
+  when: log_paths is defined
+  tags:
+    - config
+    - logs
+
+- name: "Skonfiguruj swap (jeśli włączony)"
+  include_tasks: swap-config.yml
+  when: 
+    - swap_configuration is defined
+    - swap_configuration.manage_swap | default(false)
+  tags:
+    - config
+    - swap
+
+- name: "Sprawdź wykorzystanie pamięci"
+  shell: |
+    free -h | grep -E "^Mem|^Swap"
+  register: memory_usage
+  changed_when: false
+  tags: config
+
+- name: "Sprawdź obciążenie systemu"
+  shell: |
+    uptime | awk -F'load average:' '{print $2}'
+  register: system_load
+  changed_when: false
+  tags: config
+
+- name: "Sprawdź wykorzystanie dysku"
+  shell: |
+    df -h / | awk 'NR==2 {print "Używane: " $3 "/" $2 " (" $5 ")"}'
+  register: disk_usage
+  changed_when: false
+  tags: config
+
+- name: "Podsumowanie konfiguracji systemu"
+  debug:
+    msg: |
+      === KONFIGURACJA SYSTEMU ===
+      Hostname: {{ ansible_hostname }}
+      Locale: {{ locale | default('default') }}
+      Timezone: {{ timezone | default('default') }}
+      === ZASOBY SYSTEMOWE ===
+      {{ memory_usage.stdout }}
+      Obciążenie: {{ system_load.stdout.strip() }}
+      {{ disk_usage.stdout }}
+  tags: config

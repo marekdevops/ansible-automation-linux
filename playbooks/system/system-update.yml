@@ -1,0 +1,153 @@
+---
+# Aktualizacja systemu
+# Plik: playbooks/system/system-update.yml
+
+- name: "Aktualizacja cache pakietów (Debian/Ubuntu)"
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: 
+    - ansible_os_family == "Debian"
+    - system_update_config.cache_update | default(true)
+  tags: update
+
+- name: "Aktualizacja cache pakietów (RedHat/CentOS)"
+  yum:
+    update_cache: yes
+  when: 
+    - ansible_os_family == "RedHat"
+    - system_update_config.cache_update | default(true)
+  tags: update
+
+- name: "Sprawdź dostępne aktualizacje (Debian/Ubuntu)"
+  shell: apt list --upgradable 2>/dev/null | grep -v "WARNING" | wc -l
+  register: available_updates_deb
+  changed_when: false
+  when: ansible_os_family == "Debian"
+  tags: update
+
+- name: "Sprawdź dostępne aktualizacje (RedHat/CentOS)"
+  shell: yum check-update --quiet | wc -l
+  register: available_updates_rh
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+  tags: update
+
+- name: "Wyświetl liczbę dostępnych aktualizacji"
+  debug:
+    msg: |
+      Dostępne aktualizacje: {{ available_updates_deb.stdout if ansible_os_family == 'Debian' else available_updates_rh.stdout }}
+  when: available_updates_deb is defined or available_updates_rh is defined
+  tags: update
+
+- name: "Aktualizuj wszystkie pakiety (Debian/Ubuntu)"
+  apt:
+    upgrade: dist
+    autoremove: "{{ system_update_config.autoremove | default(true) }}"
+    autoclean: "{{ system_update_config.autoclean | default(true) }}"
+  register: apt_upgrade_result
+  when: 
+    - ansible_os_family == "Debian"
+    - system_update_config.upgrade_all | default(true)
+    - (available_updates_deb.stdout | int) > 0
+  tags: update
+
+- name: "Aktualizuj wszystkie pakiety (RedHat/CentOS)"
+  yum:
+    name: "*"
+    state: latest
+    exclude: "{{ excluded_packages | join(',') if excluded_packages is defined else omit }}"
+  register: yum_upgrade_result
+  when: 
+    - ansible_os_family == "RedHat"
+    - system_update_config.upgrade_all | default(true)
+    - (available_updates_rh.stdout | int) > 0
+  tags: update
+
+- name: "Sprawdź czy wymagany restart systemu (Debian/Ubuntu)"
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required_file
+  when: ansible_os_family == "Debian"
+  tags: update
+
+- name: "Sprawdź czy wymagany restart systemu (RedHat/CentOS)"
+  shell: |
+    if [ -f /usr/bin/needs-restarting ]; then
+      needs-restarting -r
+      echo $?
+    else
+      echo "0"
+    fi
+  register: needs_restarting
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+  tags: update
+
+- name: "Ustaw flagę restart dla Debian/Ubuntu"
+  set_fact:
+    reboot_required: true
+  when: 
+    - ansible_os_family == "Debian"
+    - reboot_required_file.stat.exists | default(false)
+  tags: update
+
+- name: "Ustaw flagę restart dla RedHat/CentOS" 
+  set_fact:
+    reboot_required: true
+  when:
+    - ansible_os_family == "RedHat"
+    - needs_restarting.stdout | default("0") != "0"
+  tags: update
+
+- name: "Informacja o wymaganym restarcie"
+  debug:
+    msg: "UWAGA: Wymagany restart systemu po aktualizacji!"
+  when: reboot_required | default(false)
+  tags: update
+
+- name: "Restart systemu (jeśli włączony)"
+  reboot:
+    reboot_timeout: "{{ reboot_timeout | default(300) }}"
+    msg: "Restart po aktualizacji systemu"
+  when: 
+    - reboot_required | default(false)
+    - reboot_after_update | default(false)
+  tags: update
+
+- name: "Sprawdź status systemu po aktualizacji"
+  wait_for_connection:
+    timeout: 60
+  when: 
+    - reboot_required | default(false)
+    - reboot_after_update | default(false)
+  tags: update
+
+- name: "Wyczyść cache pakietów po aktualizacji (Debian/Ubuntu)"
+  apt:
+    autoclean: yes
+  when: 
+    - ansible_os_family == "Debian"
+    - apt_upgrade_result is defined
+    - apt_upgrade_result.changed
+  tags: update
+
+- name: "Wyczyść cache pakietów po aktualizacji (RedHat/CentOS)"
+  command: yum clean all
+  when: 
+    - ansible_os_family == "RedHat"
+    - yum_upgrade_result is defined
+    - yum_upgrade_result.changed
+  tags: update
+
+- name: "Podsumowanie aktualizacji"
+  debug:
+    msg: |
+      === PODSUMOWANIE AKTUALIZACJI ===
+      System: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      Pakiety zaktualizowane: {{ 'Tak' if (apt_upgrade_result.changed | default(false)) or (yum_upgrade_result.changed | default(false)) else 'Nie' }}
+      Restart wymagany: {{ 'Tak' if reboot_required | default(false) else 'Nie' }}
+      Auto-restart: {{ 'Włączony' if reboot_after_update | default(false) else 'Wyłączony' }}
+  tags: update

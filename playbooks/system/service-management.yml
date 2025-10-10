@@ -1,0 +1,37 @@
+---
+# Zarządzanie usługami systemowymi
+# Plik: playbooks/system/service-management.yml
+
+- name: "=== ZARZĄDZANIE USŁUGAMI ==="
+  debug:
+    msg: "Konfiguracja usług systemowych"
+  tags: services
+
+- name: "Włącz i uruchom wymagane usługi"
+  service:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('started') }}"
+    enabled: "{{ item.enabled | default(true) }}"
+  loop: "{{ services_to_enable | default([]) }}"
+  tags: services
+
+- name: "Wyłącz niepotrzebne usługi"
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: "{{ services_to_disable | default([]) }}"
+  failed_when: false
+  tags: services
+
+- name: "Sprawdź status wszystkich usług"
+  service_facts:
+  tags: services
+
+- name: "Wyświetl status kluczowych usług"
+  debug:
+    msg: |
+      Usługa {{ item.name }}: {{ 'Aktywna' if ansible_facts.services[item.name + '.service'].state == 'running' else 'Nieaktywna' }}
+  loop: "{{ services_to_enable | default([]) }}"
+  when: (item.name + '.service') in ansible_facts.services
+  tags: services

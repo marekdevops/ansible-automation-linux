@@ -1,0 +1,44 @@
+---
+# Główny playbook dla zadań konserwacyjnych
+# Plik: playbooks/maintenance/main.yml
+
+- name: "=== MAINTENANCE TASKS - START ==="
+  debug:
+    msg: "Rozpoczynam zadania konserwacyjne..."
+  tags: always
+
+# === BACKUP ===
+- name: "Include Backup Tasks"
+  include_tasks: backup.yml
+  when: enable_backup | default(false)
+  tags:
+    - maintenance
+    - backup
+
+# === CLEANUP ===
+- name: "Include System Cleanup Tasks"
+  include_tasks: cleanup.yml
+  when: cleanup_enabled | default(true)
+  tags:
+    - maintenance
+    - cleanup
+
+# === CRON JOBS ===
+- name: "Include Cron Management Tasks"
+  include_tasks: cron-jobs.yml
+  tags:
+    - maintenance
+    - cron
+
+# === HEALTH CHECK ===
+- name: "Include Health Check Tasks"
+  include_tasks: health-check.yml
+  tags:
+    - maintenance
+    - health
+    - check
+
+- name: "=== MAINTENANCE TASKS - END ==="
+  debug:
+    msg: "Zakończono zadania konserwacyjne."
+  tags: always

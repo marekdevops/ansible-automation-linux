@@ -1,0 +1,12 @@
+# Plik z komendami sudo (oddzielone średnikiem)
+# Każda komenda w osobnej linii lub wszystkie w jednej linii oddzielone ;
+# 
+# Przykładowe komendy:
+/usr/bin/systemctl restart nginx;/usr/bin/systemctl reload nginx;/usr/bin/systemctl status nginx
+/usr/bin/systemctl restart apache2;/usr/bin/systemctl reload apache2
+/bin/chmod +x /opt/scripts/*
+/usr/bin/docker ps;/usr/bin/docker images;/usr/bin/docker logs *
+/usr/sbin/service * restart;/usr/sbin/service * stop;/usr/sbin/service * start
+/usr/bin/tail -f /var/log/*.log;/usr/bin/less /var/log/*.log
+/usr/bin/rsync * *;/usr/bin/scp * *
+/bin/mount;/bin/umount

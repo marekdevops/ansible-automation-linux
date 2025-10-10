@@ -1,0 +1,30 @@
+---
+# Zmienne dla środowiska produkcyjnego
+
+# System settings
+update_system: true
+reboot_after_update: false
+install_essential_packages: true
+
+# Security settings  
+enable_firewall: true
+ssh_port: 2222
+disable_root_login: true
+install_fail2ban: true
+
+# Monitoring
+monitoring_enabled: true
+log_retention_days: 30
+
+# Backup
+backup_enabled: true
+backup_retention_days: 7
+backup_time: "02:00"
+
+# Services
+nginx_worker_processes: auto
+mysql_max_connections: 200
+
+# Maintenance
+cleanup_enabled: true
+cleanup_schedule: "0 3 * * 0"  # Niedziela o 3:00

@@ -1,0 +1,177 @@
+---
+# Główne zmienne dla roli Linux Administrator Automation
+# Plik: vars/main.yml
+
+# ===============================================
+# ZMIENNE SYSTEMOWE
+# ===============================================
+
+# Pakiety do instalacji na wszystkich systemach
+essential_packages:
+  - curl
+  - wget
+  - git
+  - htop
+  - vim
+  - unzip
+  - rsync
+  - tree
+  - net-tools
+
+# Pakiety dla różnych dystrybucji
+distribution_packages:
+  RedHat:
+    - epel-release
+    - yum-utils
+  Debian:
+    - apt-transport-https
+    - software-properties-common
+  Ubuntu:
+    - software-properties-common
+    - ubuntu-advantage-tools
+
+# Usługi systemowe
+system_services:
+  - name: chronyd
+    enabled: true
+    state: started
+  - name: rsyslog
+    enabled: true
+    state: started
+
+# ===============================================
+# ZMIENNE UŻYTKOWNIKÓW
+# ===============================================
+
+# Grupy systemowe do utworzenia
+system_groups:
+  - name: admins
+    gid: 1500
+  - name: developers
+    gid: 1501
+
+# Użytkownicy do utworzenia (przykład)
+system_users: []
+  # - name: admin
+  #   groups: 
+  #     - sudo
+  #     - admins
+  #   shell: /bin/bash
+  #   create_home: true
+  #   ssh_keys: []
+
+# ===============================================
+# ZMIENNE CZASOWE I LOCALIZACJA
+# ===============================================
+
+# Strefa czasowa
+timezone: "Europe/Warsaw"
+
+# Locale
+locale: "pl_PL.UTF-8"
+
+# NTP servers
+ntp_servers:
+  - "0.pl.pool.ntp.org"
+  - "1.pl.pool.ntp.org"
+  - "2.pl.pool.ntp.org"
+
+# ===============================================
+# ZMIENNE SIECIOWE
+# ===============================================
+
+# DNS servers
+dns_servers:
+  - "8.8.8.8"
+  - "1.1.1.1"
+  - "8.8.4.4"
+
+# Hostname configuration
+set_hostname: false
+hostname: "{{ ansible_hostname }}"
+
+# ===============================================
+# ZMIENNE KATALOGÓW I ŚCIEŻEK
+# ===============================================
+
+# Główne katalogi
+base_directories:
+  - path: /opt/scripts
+    owner: root
+    group: root
+    mode: '0755'
+  - path: /var/log/automation
+    owner: root
+    group: root
+    mode: '0755'
+  - path: /etc/automation
+    owner: root
+    group: root
+    mode: '0755'
+
+# Katalogi backupów
+backup_base_dir: "/backup"
+backup_dirs:
+  - "{{ backup_base_dir }}/system"
+  - "{{ backup_base_dir }}/configs"
+  - "{{ backup_base_dir }}/databases"
+
+# ===============================================
+# ZMIENNE LOGOWANIA
+# ===============================================
+
+# Konfiguracja logów
+log_configuration:
+  max_size: "100M"
+  rotate_count: 5
+  compress: true
+
+# Lokalizacje logów
+log_paths:
+  system: "/var/log/automation/system.log"
+  security: "/var/log/automation/security.log"
+  maintenance: "/var/log/automation/maintenance.log"
+
+# ===============================================
+# ZMIENNE WYDAJNOŚCI
+# ===============================================
+
+# Limity systemowe
+system_limits:
+  - domain: "*"
+    type: soft
+    item: nofile
+    value: 65536
+  - domain: "*"
+    type: hard
+    item: nofile
+    value: 65536
+
+# Kernel parameters
+kernel_parameters:
+  - name: "vm.swappiness"
+    value: "10"
+  - name: "net.core.somaxconn"
+    value: "1024"
+
+# ===============================================
+# ZMIENNE KONTROLNE
+# ===============================================
+
+# Flagi kontrolne (domyślne wartości)
+enable_system_update: "{{ update_system | default(true) }}"
+enable_security_hardening: "{{ enable_security | default(true) }}"
+enable_monitoring_setup: "{{ enable_monitoring | default(false) }}"
+enable_backup_setup: "{{ enable_backup | default(false) }}"
+enable_service_installation: "{{ enable_services | default(false) }}"
+
+# Reboot configuration
+reboot_required: false
+reboot_timeout: 300
+
+# ===============================================
+# ZMIENNE WERSJI
+# ===============================================
+
+automation_version: "1.0.0"
+last_update: "2025-10-10"

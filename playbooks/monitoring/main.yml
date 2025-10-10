@@ -1,0 +1,49 @@
+---
+# Główny playbook dla monitoringu
+# Plik: playbooks/monitoring/main.yml
+
+- name: "=== MONITORING TASKS - START ==="
+  debug:
+    msg: "Rozpoczynam konfigurację monitoringu..."
+  tags: always
+
+# === SYSTEM MONITORING ===
+- name: "Include System Monitoring Tasks"
+  include_tasks: system-monitoring.yml
+  when: install_monitoring | default(false)
+  tags:
+    - monitoring
+    - system
+    - metrics
+
+# === LOG MANAGEMENT ===
+- name: "Include Log Management Tasks"
+  include_tasks: log-management.yml
+  when: configure_logging | default(false)
+  tags:
+    - monitoring
+    - logs
+    - rsyslog
+
+# === PROMETHEUS ===
+- name: "Include Prometheus Tasks"
+  include_tasks: prometheus.yml
+  when: install_prometheus | default(false)
+  tags:
+    - monitoring
+    - prometheus
+    - metrics
+
+# === GRAFANA ===
+- name: "Include Grafana Tasks"
+  include_tasks: grafana.yml
+  when: install_grafana | default(false)
+  tags:
+    - monitoring
+    - grafana
+    - dashboard
+
+- name: "=== MONITORING TASKS - END ==="
+  debug:
+    msg: "Zakończono konfigurację monitoringu."
+  tags: always

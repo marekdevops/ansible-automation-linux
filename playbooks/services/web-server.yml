@@ -1,0 +1,91 @@
+---
+# Instalacja i konfiguracja web serwera
+# Plik: playbooks/services/web-server.yml
+
+- name: "=== WEB SERVER INSTALLATION ==="
+  debug:
+    msg: "Instalacja i konfiguracja serwera web: {{ web_server | default('nginx') }}"
+  tags: web
+
+# === NGINX ===
+- block:
+  - name: "Zainstaluj Nginx"
+    package:
+      name: nginx
+      state: present
+  
+  - name: "Utwórz katalogi Nginx"
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+    loop:
+      - /etc/nginx/sites-available
+      - /etc/nginx/sites-enabled
+      - /var/log/nginx
+      - /var/www/html
+  
+  - name: "Skonfiguruj główny plik nginx.conf"
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+      backup: yes
+      owner: root
+      group: root
+      mode: '0644'
+    notify: reload nginx
+  
+  - name: "Uruchom i włącz Nginx"
+    service:
+      name: nginx
+      state: started
+      enabled: true
+  
+  - name: "Sprawdź status Nginx"
+    uri:
+      url: "http://localhost"
+      method: GET
+    register: nginx_status
+    failed_when: false
+  
+  when: install_nginx | default(false)
+  tags:
+    - web
+    - nginx
+
+# === APACHE ===
+- block:
+  - name: "Zainstaluj Apache"
+    package:
+      name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+      state: present
+  
+  - name: "Uruchom i włącz Apache"
+    service:
+      name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+      state: started
+      enabled: true
+  
+  when: install_apache | default(false)
+  tags:
+    - web
+    - apache
+
+- name: "Otwórz porty w firewall dla web serwera"
+  firewalld:
+    service: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - http
+    - https
+  when: 
+    - firewall_enabled | default(true)
+    - ansible_facts['os_family'] == 'RedHat'
+  failed_when: false
+  tags:
+    - web
+    - firewall

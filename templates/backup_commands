@@ -1,0 +1,7 @@
+# Komendy dla operatora backupów
+/usr/bin/rsync -av * *;/usr/bin/scp -r * *
+/bin/mount;/bin/umount /backup/*;/bin/umount /mnt/*
+/usr/bin/tar czf * *;/usr/bin/tar xzf * *;/usr/bin/tar tzf *
+/usr/sbin/service mysql stop;/usr/sbin/service mysql start
+/usr/sbin/service postgresql stop;/usr/sbin/service postgresql start
+/usr/bin/mysqldump * > *;/usr/bin/pg_dump * > *

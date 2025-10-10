@@ -1,0 +1,219 @@
+---
+# Zmienne bezpieczeństwa
+# Plik: vars/security.yml
+
+# ===============================================
+# SSH CONFIGURATION
+# ===============================================
+
+# Podstawowa konfiguracja SSH
+ssh_config:
+  port: "{{ ssh_port | default(22) }}"
+  protocol: 2
+  permit_root_login: "{{ 'no' if disable_root_login | default(true) else 'yes' }}"
+  password_authentication: false
+  pubkey_authentication: true
+  challenge_response_authentication: false
+  use_pam: true
+  x11_forwarding: false
+  print_motd: true
+  client_alive_interval: 300
+  client_alive_count_max: 2
+  max_auth_tries: 3
+  max_sessions: 2
+
+# Dozwoleni użytkownicy SSH (puste = wszyscy)
+ssh_allowed_users: []
+ssh_allowed_groups: []
+
+# Banner SSH
+ssh_banner_enabled: true
+ssh_banner_text: |
+  **************************************************************************
+  *                        UWAGA - SYSTEM MONITOROWANY                    *
+  *                                                                        *
+  * Ten system jest monitorowany i chroniony. Wszelkie działania są       *
+  * rejestrowane. Nieuprawniony dostęp jest zabroniony i może skutkować   *
+  * konsekwencjami prawnymi.                                               *
+  *                                                                        *
+  * Authorized access only. All activities are logged.                     *
+  **************************************************************************
+
+# ===============================================
+# FIREWALL CONFIGURATION
+# ===============================================
+
+# Podstawowe reguły firewall
+firewall_enabled: "{{ enable_firewall | default(true) }}"
+firewall_default_policy: "deny"
+
+# Podstawowe porty do otwarcia
+firewall_allowed_ports:
+  - port: "{{ ssh_config.port }}"
+    protocol: tcp
+    comment: "SSH Access"
+
+# Dodatkowe reguły firewall
+firewall_custom_rules: []
+  # - port: 80
+  #   protocol: tcp
+  #   source: any
+  #   comment: "HTTP Traffic"
+
+# Zaufane sieci
+trusted_networks: []
+  # - "192.168.1.0/24"
+  # - "10.0.0.0/8"
+
+# ===============================================
+# FAIL2BAN CONFIGURATION
+# ===============================================
+
+fail2ban_enabled: "{{ install_fail2ban | default(true) }}"
+
+# Konfiguracja jail dla SSH
+fail2ban_jails:
+  sshd:
+    enabled: true
+    port: "{{ ssh_config.port }}"
+    filter: sshd
+    logpath: /var/log/auth.log
+    maxretry: 3
+    findtime: 600
+    bantime: 3600
+    backend: auto
+
+# Dodatkowe jail'e
+fail2ban_custom_jails: {}
+
+# ===============================================
+# UŻYTKOWNICY I GRUPY
+# ===============================================
+
+# Użytkownicy do usunięcia (niebezpieczni)
+users_to_remove:
+  - games
+  - news
+  - uucp
+
+# Grupy administratorów
+admin_groups:
+  - sudo
+  - wheel
+  - admins
+
+# ===============================================
+# HASŁA I UWIERZYTELNIANIE
+# ===============================================
+
+# Polityka haseł
+password_policy:
+  min_length: 12
+  require_uppercase: true
+  require_lowercase: true
+  require_digits: true
+  require_special: true
+  max_age: 90
+  min_age: 1
+  warn_age: 7
+
+# Blokada konta po nieudanych logowaniach
+account_lockout:
+  max_attempts: 5
+  lockout_duration: 900  # 15 minut
+
+# ===============================================
+# AUDYT I MONITOROWANIE
+# ===============================================
+
+# Auditd configuration
+auditd_enabled: true
+auditd_rules:
+  - "-w /etc/passwd -p wa -k identity"
+  - "-w /etc/group -p wa -k identity"
+  - "-w /etc/shadow -p wa -k identity"
+  - "-w /etc/sudoers -p wa -k sudoers"
+  - "-w /var/log/auth.log -p wa -k auth"
+
+# Logwatch configuration
+logwatch_enabled: false
+logwatch_email: "admin@localhost"
+
+# ===============================================
+# SKANOWANIE I KONTROLA
+# ===============================================
+
+# Rootkit detection
+rkhunter_enabled: false
+chkrootkit_enabled: false
+
+# File integrity monitoring
+aide_enabled: false
+aide_schedule: "0 2 * * *"
+
+# ===============================================
+# SIECIOWE ZABEZPIECZENIA
+# ===============================================
+
+# Wyłączenie niepotrzebnych usług sieciowych
+disable_services:
+  - avahi-daemon
+  - cups
+  - bluetooth
+
+# Konfiguracja sysctl dla bezpieczeństwa
+security_sysctl_params:
+  # Network security
+  - name: "net.ipv4.ip_forward"
+    value: "0"
+  - name: "net.ipv4.conf.all.send_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.default.send_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.all.accept_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.default.accept_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.all.secure_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.default.secure_redirects"
+    value: "0"
+  - name: "net.ipv4.conf.all.log_martians"
+    value: "1"
+  - name: "net.ipv4.conf.default.log_martians"
+    value: "1"
+  - name: "net.ipv4.icmp_echo_ignore_broadcasts"
+    value: "1"
+  - name: "net.ipv4.icmp_ignore_bogus_error_responses"
+    value: "1"
+  - name: "net.ipv4.tcp_syncookies"
+    value: "1"
+  
+  # Memory protection
+  - name: "kernel.dmesg_restrict"
+    value: "1"
+  - name: "kernel.kptr_restrict"
+    value: "2"
+
+# ===============================================
+# UPRAWNIENIA PLIKÓW
+# ===============================================
+
+# Krytyczne pliki do zabezpieczenia
+critical_files_permissions:
+  - path: "/etc/passwd"
+    mode: "0644"
+    owner: "root"
+    group: "root"
+  - path: "/etc/shadow"
+    mode: "0600"
+    owner: "root"
+    group: "root"
+  - path: "/etc/group"
+    mode: "0644"
+    owner: "root"
+    group: "root"
+  - path: "/etc/sudoers"
+    mode: "0440"
+    owner: "root"
+    group: "root"

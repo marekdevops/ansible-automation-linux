@@ -1,0 +1,118 @@
+---
+# Główny playbook dla automatyzacji Linux Administrator
+# Autor: Marek DevOps
+# Data: 2025-10-10
+
+- name: "Linux Administrator Automation - Main Playbook"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars_files:
+    - vars/main.yml
+    - vars/security.yml
+    - vars/system.yml
+  
+  vars:
+    # Domyślne wartości - mogą być nadpisane przez extra-vars
+    run_system_tasks: "{{ system_tasks | default(true) }}"
+    run_security_tasks: "{{ security_tasks | default(true) }}"
+    run_services_tasks: "{{ services_tasks | default(false) }}"
+    run_monitoring_tasks: "{{ monitoring_tasks | default(false) }}"
+    run_maintenance_tasks: "{{ maintenance_tasks | default(false) }}"
+  
+  pre_tasks:
+    - name: "Wyświetl informacje o systemie"
+      debug:
+        msg: |
+          System: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Architektura: {{ ansible_architecture }}
+          Hostname: {{ ansible_hostname }}
+          IP: {{ ansible_default_ipv4.address }}
+      tags: always
+    
+    - name: "Sprawdź wymagania systemowe"
+      include_tasks: tasks/prerequisites.yml
+      tags: always
+
+  tasks:
+    # === SYSTEM TASKS ===
+    - name: "Include System Tasks"
+      include: playbooks/system/main.yml
+      when: run_system_tasks | bool
+      tags: 
+        - system
+        - update
+        - users
+        - packages
+
+    # === SECURITY TASKS ===
+    - name: "Include Security Tasks"
+      include: playbooks/security/main.yml
+      when: run_security_tasks | bool
+      tags:
+        - security
+        - firewall
+        - ssh
+        - hardening
+
+    # === SERVICES TASKS ===
+    - name: "Include Services Tasks"
+      include: playbooks/services/main.yml
+      when: run_services_tasks | bool
+      tags:
+        - services
+        - web
+        - database
+        - docker
+
+    # === MONITORING TASKS ===
+    - name: "Include Monitoring Tasks"
+      include: playbooks/monitoring/main.yml
+      when: run_monitoring_tasks | bool
+      tags:
+        - monitoring
+        - logs
+        - metrics
+
+    # === MAINTENANCE TASKS ===
+    - name: "Include Maintenance Tasks"
+      include: playbooks/maintenance/main.yml
+      when: run_maintenance_tasks | bool
+      tags:
+        - maintenance
+        - backup
+        - cleanup
+        - cron
+
+  post_tasks:
+    - name: "Podsumowanie wykonanych zadań"
+      debug:
+        msg: |
+          ========================
+          ANSIBLE AUTOMATION SUMMARY
+          ========================
+          Host: {{ ansible_hostname }}
+          System tasks: {{ 'Executed' if run_system_tasks else 'Skipped' }}
+          Security tasks: {{ 'Executed' if run_security_tasks else 'Skipped' }}
+          Services tasks: {{ 'Executed' if run_services_tasks else 'Skipped' }}
+          Monitoring tasks: {{ 'Executed' if run_monitoring_tasks else 'Skipped' }}
+          Maintenance tasks: {{ 'Executed' if run_maintenance_tasks else 'Skipped' }}
+          ========================
+      tags: always
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: "{{ ssh_service_name | default('sshd') }}"
+        state: restarted
+    
+    - name: reload firewall
+      command: "{{ firewall_reload_command | default('systemctl reload firewalld') }}"
+      ignore_errors: yes
+    
+    - name: reboot system
+      reboot:
+        reboot_timeout: 300
+      when: reboot_required | default(false) | bool

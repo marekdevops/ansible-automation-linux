@@ -1,0 +1,208 @@
+---
+# Wzmacnianie zabezpieczeń SSH
+# Plik: playbooks/security/ssh-hardening.yml
+
+- name: "=== SSH HARDENING ==="
+  debug:
+    msg: "Wzmacnianie zabezpieczeń SSH"
+  tags: ssh
+
+- name: "Sprawdź czy SSH jest zainstalowany"
+  package_facts:
+    manager: auto
+  tags: ssh
+
+- name: "Zainstaluj OpenSSH server"
+  package:
+    name: 
+      - openssh-server
+    state: present
+  when: "'openssh-server' not in ansible_facts.packages"
+  tags: ssh
+
+- name: "Utwórz backup konfiguracji SSH"
+  copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup.{{ ansible_date_time.epoch }}
+    remote_src: yes
+    owner: root
+    group: root
+    mode: '0600'
+  tags: ssh
+
+- name: "Skonfiguruj port SSH"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Port '
+    line: "Port {{ ssh_config.port }}"
+    backup: yes
+  notify: restart sshd
+  tags: ssh
+
+- name: "Wyłącz logowanie root przez SSH"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin '
+    line: "PermitRootLogin {{ ssh_config.permit_root_login }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Wyłącz uwierzytelnianie hasłem"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication '
+    line: "PasswordAuthentication {{ 'yes' if ssh_config.password_authentication else 'no' }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Włącz uwierzytelnianie kluczem publicznym"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PubkeyAuthentication '
+    line: "PubkeyAuthentication {{ 'yes' if ssh_config.pubkey_authentication else 'no' }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Wyłącz X11 forwarding"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?X11Forwarding '
+    line: "X11Forwarding {{ 'yes' if ssh_config.x11_forwarding else 'no' }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Ustaw maksymalną liczbę prób uwierzytelnienia"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?MaxAuthTries '
+    line: "MaxAuthTries {{ ssh_config.max_auth_tries }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Ustaw maksymalną liczbę sesji"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?MaxSessions '
+    line: "MaxSessions {{ ssh_config.max_sessions }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Ustaw ClientAliveInterval"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?ClientAliveInterval '
+    line: "ClientAliveInterval {{ ssh_config.client_alive_interval }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Ustaw ClientAliveCountMax"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?ClientAliveCountMax '
+    line: "ClientAliveCountMax {{ ssh_config.client_alive_count_max }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Wyłącz Challenge Response Authentication"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?ChallengeResponseAuthentication '
+    line: "ChallengeResponseAuthentication {{ 'yes' if ssh_config.challenge_response_authentication else 'no' }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Skonfiguruj dozwolonych użytkowników SSH"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?AllowUsers '
+    line: "AllowUsers {{ ssh_allowed_users | join(' ') }}"
+  when: ssh_allowed_users | length > 0
+  notify: restart sshd
+  tags: ssh
+
+- name: "Skonfiguruj dozwolone grupy SSH"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?AllowGroups '
+    line: "AllowGroups {{ ssh_allowed_groups | join(' ') }}"
+  when: ssh_allowed_groups | length > 0
+  notify: restart sshd
+  tags: ssh
+
+- name: "Skonfiguruj banner SSH"
+  copy:
+    content: "{{ ssh_banner_text }}"
+    dest: /etc/ssh/banner
+    owner: root
+    group: root
+    mode: '0644'
+  when: ssh_banner_enabled | default(false)
+  tags: ssh
+
+- name: "Włącz banner w konfiguracji SSH"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Banner '
+    line: "Banner /etc/ssh/banner"
+  when: ssh_banner_enabled | default(false)
+  notify: restart sshd
+  tags: ssh
+
+- name: "Ustaw protokół SSH v2"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Protocol '
+    line: "Protocol {{ ssh_config.protocol }}"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Wyłącz puste hasła"
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitEmptyPasswords '
+    line: "PermitEmptyPasswords no"
+  notify: restart sshd
+  tags: ssh
+
+- name: "Sprawdź konfigurację SSH"
+  command: sshd -t
+  register: sshd_config_test
+  changed_when: false
+  failed_when: sshd_config_test.rc != 0
+  tags: ssh
+
+- name: "Uruchom i włącz usługę SSH"
+  service:
+    name: "{{ ssh_service_name | default('sshd') }}"
+    state: started
+    enabled: true
+  tags: ssh
+
+- name: "Sprawdź status usługi SSH"
+  command: systemctl is-active sshd
+  register: sshd_status
+  changed_when: false
+  failed_when: false
+  tags: ssh
+
+- name: "Wyświetl informacje o konfiguracji SSH"
+  debug:
+    msg: |
+      === KONFIGURACJA SSH ===
+      Port SSH: {{ ssh_config.port }}
+      Root Login: {{ ssh_config.permit_root_login }}
+      Password Auth: {{ ssh_config.password_authentication }}
+      Key Auth: {{ ssh_config.pubkey_authentication }}
+      Status usługi: {{ sshd_status.stdout }}
+      Dozwoleni użytkownicy: {{ ssh_allowed_users | join(', ') if ssh_allowed_users | length > 0 else 'wszyscy' }}
+      Dozwolone grupy: {{ ssh_allowed_groups | join(', ') if ssh_allowed_groups | length > 0 else 'wszystkie' }}
+  tags: ssh
+
+- name: "Ostrzeżenie o zmianie portu SSH"
+  debug:
+    msg: |
+      UWAGA: Port SSH został zmieniony na {{ ssh_config.port }}
+      Pamiętaj o aktualizacji reguł firewall i połączeń SSH!
+      Nowe połączenie: ssh -p {{ ssh_config.port }} user@{{ ansible_default_ipv4.address }}
+  when: ssh_config.port != "22"
+  tags: ssh

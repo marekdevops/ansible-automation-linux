@@ -1,0 +1,64 @@
+---
+# Zadania backup i archiwizacji
+# Plik: playbooks/maintenance/backup.yml
+
+- name: "=== BACKUP CONFIGURATION ==="
+  debug:
+    msg: "Konfiguracja systemu backupów"
+  tags: backup
+
+- name: "Utwórz katalogi backup"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  loop: "{{ backup_dirs | default([]) }}"
+  tags: backup
+
+- name: "Zainstaluj narzędzia backup"
+  package:
+    name:
+      - rsync
+      - tar
+      - gzip
+    state: present
+  tags: backup
+
+- name: "Utwórz skrypt backup systemu"
+  template:
+    src: backup-system.sh.j2
+    dest: /opt/scripts/backup-system.sh
+    owner: root
+    group: root
+    mode: '0750'
+  tags: backup
+
+- name: "Skonfiguruj cron job dla backup"
+  cron:
+    name: "System backup"
+    job: "/opt/scripts/backup-system.sh >> /var/log/backup.log 2>&1"
+    minute: "0"
+    hour: "{{ backup_time.split(':')[0] | default('2') }}"
+    user: root
+    state: "{{ 'present' if backup_enabled | default(false) else 'absent' }}"
+  tags: backup
+
+- name: "Sprawdź miejsce na backup"
+  shell: df -h {{ backup_base_dir | default('/backup') }} | awk 'NR==2 {print $4}'
+  register: backup_space
+  changed_when: false
+  when: backup_base_dir is defined
+  tags: backup
+
+- name: "Wyświetl informacje o backup"
+  debug:
+    msg: |
+      === KONFIGURACJA BACKUP ===
+      Status: {{ 'Włączony' if backup_enabled | default(false) else 'Wyłączony' }}
+      Katalog: {{ backup_base_dir | default('/backup') }}
+      Czas: {{ backup_time | default('02:00') }}
+      Dostępne miejsce: {{ backup_space.stdout | default('N/A') }}
+      Retencja: {{ backup_retention_days | default(7) }} dni
+  tags: backup
