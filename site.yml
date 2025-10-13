@@ -39,7 +39,7 @@
   tasks:
     # === SYSTEM TASKS ===
     - name: "Include System Tasks"
-      include: playbooks/system/main.yml
+      import_tasks: playbooks/system/main.yml
       when: run_system_tasks | bool
       tags: 
         - system
@@ -49,7 +49,7 @@
 
     # === SECURITY TASKS ===
     - name: "Include Security Tasks"
-      include: playbooks/security/main.yml
+      import_tasks: playbooks/security/main.yml
       when: run_security_tasks | bool
       tags:
         - security
@@ -59,7 +59,7 @@
 
     # === SERVICES TASKS ===
     - name: "Include Services Tasks"
-      include: playbooks/services/main.yml
+      import_tasks: playbooks/services/main.yml
       when: run_services_tasks | bool
       tags:
         - services
@@ -69,7 +69,7 @@
 
     # === MONITORING TASKS ===
     - name: "Include Monitoring Tasks"
-      include: playbooks/monitoring/main.yml
+      import_tasks: playbooks/monitoring/main.yml
       when: run_monitoring_tasks | bool
       tags:
         - monitoring
@@ -78,7 +78,7 @@
 
     # === MAINTENANCE TASKS ===
     - name: "Include Maintenance Tasks"
-      include: playbooks/maintenance/main.yml
+      import_tasks: playbooks/maintenance/main.yml
       when: run_maintenance_tasks | bool
       tags:
         - maintenance

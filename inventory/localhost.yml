@@ -1,0 +1,26 @@
+---
+# Inventory tylko do testów lokalnych
+# Plik: inventory/localhost.yml
+
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      ansible_become: true
+      ansible_become_method: sudo
+      # Dla localhost.yml usuń komentarz jeśli potrzebujesz hasła:
+      # ansible_become_pass: "{{ vault_sudo_password }}"
+  
+  vars:
+    # Ustawienia dla testów lokalnych
+    environment: local
+    ssh_port: 22
+    enable_firewall: false
+    backup_enabled: false
+    monitoring_enabled: false
+    reboot_after_update: false
+    
+    # Bezpieczne testowanie
+    install_fail2ban: false
+    disable_root_login: false

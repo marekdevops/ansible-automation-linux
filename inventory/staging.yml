@@ -1,0 +1,43 @@
+---
+# Inventory dla środowiska testowego/staging
+# Plik: inventory/staging.yml
+
+staging:
+  hosts:
+    stage-web01:
+      ansible_host: 192.168.2.10
+      ansible_user: vagrant
+      server_role: webserver
+    
+    stage-db01:
+      ansible_host: 192.168.2.20
+      ansible_user: vagrant
+      server_role: database
+
+  children:
+    webservers:
+      hosts:
+        stage-web01:
+      vars:
+        install_nginx: true
+        enable_firewall: false  # Mniej restrykcyjne w staging
+    
+    databases:
+      hosts:
+        stage-db01:
+      vars:
+        install_mysql: true
+
+  vars:
+    # Środowisko testowe - mniej restrykcyjne
+    environment: staging
+    ansible_become: true
+    ansible_become_method: sudo
+    ansible_become_user: root
+    ssh_port: 22
+    disable_root_login: false
+    enable_firewall: false
+    install_fail2ban: false
+    backup_enabled: false
+    monitoring_enabled: false
+    reboot_after_update: true  # W staging można restartować

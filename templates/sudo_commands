@@ -10,3 +10,4 @@
 /usr/bin/tail -f /var/log/*.log;/usr/bin/less /var/log/*.log
 /usr/bin/rsync * *;/usr/bin/scp * *
 /bin/mount;/bin/umount
+/usr/bin/tar czf * *;/usr/bin/tar xzf * *

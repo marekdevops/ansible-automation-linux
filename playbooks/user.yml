@@ -13,7 +13,7 @@
     user_name: "{{ user | default('') }}"
     user_home_input: "{{ home | default('default') }}"
     user_shell: "{{ shell | default('/bin/bash') }}"
-    user_groups: "{{ groups | default('') }}"
+    user_groups: "{{ user_groups_param | default('') }}"
     user_password: "{{ password | default('') }}"
     user_ssh_key: "{{ ssh_key | default('') }}"
     user_sudo: "{{ sudo | default('false') }}"
@@ -129,6 +129,7 @@
         database: passwd
         key: "{{ user_name }}"
       register: final_user_info
+      when: not ansible_check_mode
       tags: user
 
     - name: "Wyświetl informacje o użytkowniku"
@@ -136,11 +137,11 @@
         msg: |
           === UŻYTKOWNIK UTWORZONY ===
           Login: {{ user_name }}
-          UID: {{ final_user_info.ansible_facts.getent_passwd[user_name][1] }}
-          GID: {{ final_user_info.ansible_facts.getent_passwd[user_name][2] }}
-          Katalog: {{ final_user_info.ansible_facts.getent_passwd[user_name][4] }}
-          Shell: {{ final_user_info.ansible_facts.getent_passwd[user_name][5] }}
-          Status: {{ 'Zaktualizowany' if user_exists.ansible_facts is defined else 'Nowy' }}
+          UID: {{ final_user_info.ansible_facts.getent_passwd[user_name][1] if not ansible_check_mode else 'N/A (dry-run)' }}
+          GID: {{ final_user_info.ansible_facts.getent_passwd[user_name][2] if not ansible_check_mode else 'N/A (dry-run)' }}
+          Katalog: {{ final_user_info.ansible_facts.getent_passwd[user_name][4] if not ansible_check_mode else user_home_dir }}
+          Shell: {{ final_user_info.ansible_facts.getent_passwd[user_name][5] if not ansible_check_mode else user_shell }}
+          Status: {{ 'Dry-run - zmiany nie zostały zastosowane' if ansible_check_mode else ('Zaktualizowany' if user_exists.ansible_facts is defined else 'Nowy') }}
       tags: user
 
     - name: "Sprawdź dostęp sudo"

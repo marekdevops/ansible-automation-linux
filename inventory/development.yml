@@ -1,0 +1,40 @@
+---
+# Inventory dla środowiska developerskiego
+# Plik: inventory/development.yml
+
+development:
+  hosts:
+    dev-server01:
+      ansible_host: 192.168.3.10
+      ansible_user: developer
+      server_role: development
+    
+    dev-server02:
+      ansible_host: 192.168.3.11
+      ansible_user: developer
+      server_role: development
+    
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      server_role: local_dev
+
+  vars:
+    # Środowisko deweloperskie - maksymalna swoboda
+    environment: development
+    ansible_become: true
+    ansible_become_method: sudo
+    ansible_become_user: root
+    ssh_port: 22
+    disable_root_login: false
+    enable_firewall: false
+    install_fail2ban: false
+    backup_enabled: false
+    monitoring_enabled: false
+    reboot_after_update: true
+    
+    # Dodatkowe pakiety dla deweloperów
+    install_dev_tools: true
+    install_docker: true
+    install_nodejs: true
+    install_python_dev: true

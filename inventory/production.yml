@@ -1,0 +1,66 @@
+---
+# Inventory dla środowiska produkcyjnego
+# Plik: inventory/production.yml
+
+production:
+  hosts:
+    prod-web01:
+      ansible_host: 192.168.1.10
+      ansible_user: admin
+      ansible_become: true
+      server_role: webserver
+    
+    prod-web02:
+      ansible_host: 192.168.1.11
+      ansible_user: admin
+      ansible_become: true
+      server_role: webserver
+    
+    prod-db01:
+      ansible_host: 192.168.1.20
+      ansible_user: dbadmin
+      server_role: database
+    
+    prod-app01:
+      ansible_host: 192.168.1.30
+      ansible_user: appadmin
+      server_role: application
+
+  children:
+    webservers:
+      hosts:
+        prod-web01:
+        prod-web02:
+      vars:
+        install_nginx: true
+        enable_firewall: true
+        backup_enabled: true
+    
+    databases:
+      hosts:
+        prod-db01:
+      vars:
+        install_mysql: true
+        backup_enabled: true
+        monitoring_enabled: true
+    
+    applications:
+      hosts:
+        prod-app01:
+      vars:
+        install_docker: true
+        backup_enabled: false
+
+  vars:
+    # Środowisko produkcyjne - bezpieczne ustawienia
+    environment: production
+    ansible_become: true
+    ansible_become_method: sudo
+    ansible_become_user: root
+    ssh_port: 2222
+    disable_root_login: true
+    enable_firewall: true
+    install_fail2ban: true
+    backup_enabled: true
+    monitoring_enabled: true
+    reboot_after_update: false

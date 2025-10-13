@@ -17,7 +17,7 @@
     # Ścieżki
     sudoers_dir: "/etc/sudoers.d"
     sudoers_file_path: "{{ sudoers_dir }}/{{ sudoers_file_priority }}-{{ sudoers_user }}"
-    commands_template_path: "templates/{{ sudoers_commands_file }}"
+    commands_template_path: "{{ playbook_dir }}/../templates/{{ sudoers_commands_file }}"
 
   pre_tasks:
     - name: "Sprawdź czy podano nazwę użytkownika"
@@ -33,7 +33,8 @@
         database: passwd
         key: "{{ sudoers_user }}"
       register: user_exists_check
-      failed_when: user_exists_check.failed
+      failed_when: user_exists_check.failed and not ansible_check_mode
+      ignore_errors: "{{ ansible_check_mode }}"
       tags: always
 
     - name: "Wyświetl informacje o konfiguracji sudoers"
@@ -99,7 +100,7 @@
 
     - name: "Wygeneruj plik sudoers dla użytkownika"
       template:
-        src: sudoers_user.j2
+        src: "{{ playbook_dir }}/../templates/sudoers_user.j2"
         dest: "{{ sudoers_file_path }}"
         owner: root
         group: root
@@ -114,19 +115,21 @@
       register: visudo_check
       changed_when: false
       failed_when: visudo_check.rc != 0
+      when: not ansible_check_mode
       tags: sudoers
 
     - name: "Wyświetl zawartość utworzonego pliku"
       slurp:
         src: "{{ sudoers_file_path }}"
       register: sudoers_file_content
+      when: not ansible_check_mode
       tags: sudoers
 
     - name: "Pokaż zawartość pliku sudoers"
       debug:
         msg: |
           === ZAWARTOŚĆ PLIKU {{ sudoers_file_path }} ===
-          {{ sudoers_file_content.content | b64decode }}
+          {{ sudoers_file_content.content | b64decode if not ansible_check_mode else 'Dry-run - plik nie został utworzony' }}
       tags: sudoers
 
     - name: "Test uprawnień sudo dla użytkownika"
@@ -144,11 +147,11 @@
           === PODSUMOWANIE KONFIGURACJI SUDOERS ===
           Użytkownik: {{ sudoers_user }}
           Plik sudoers: {{ sudoers_file_path }}
-          Status: {{ 'Utworzony' if sudoers_created.changed else 'Już istniał' }}
-          Walidacja: {{ 'Pomyślna' if visudo_check.rc == 0 else 'Błąd' }}
+          Status: {{ 'Dry-run - zmiany nie zostały zastosowane' if ansible_check_mode else ('Utworzony' if sudoers_created.changed else 'Już istniał') }}
+          Walidacja: {{ 'Pomyślna' if (visudo_check is defined and visudo_check.rc is defined and visudo_check.rc == 0) else ('Pominięta' if ansible_check_mode else 'Błąd') }}
           
           === SPRAWDZENIE UPRAWNIEŃ ===
-          {{ sudo_test.stdout }}
+          {{ sudo_test.stdout if sudo_test is defined else 'Nie sprawdzano w trybie dry-run' }}
           
           === TESTOWANIE ===
           Aby przetestować uprawnienia, zaloguj się jako {{ sudoers_user }}:

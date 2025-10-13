@@ -58,9 +58,18 @@ ansible-galaxy collection install -r requirements.yml
 
 ## 🔧 Konfiguracja
 
-### 1. Skonfiguruj inventory
+### 1. Wybierz odpowiedni plik inventory
 
-Edytuj plik `inventory/hosts.yml`:
+Dostępne środowiska:
+- `inventory/hosts.yml` - główny plik (domyślny)
+- `inventory/production.yml` - środowisko produkcyjne 
+- `inventory/staging.yml` - środowisko testowe
+- `inventory/development.yml` - środowisko deweloperskie
+- `inventory/localhost.yml` - testy lokalne
+
+### 2. Skonfiguruj inventory
+
+Edytuj odpowiedni plik inventory, np. `inventory/production.yml`:
 ```yaml
 all:
   children:
@@ -85,15 +94,17 @@ Dostosuj zmienne w `vars/main.yml` lub użyj extra-vars.
 ### Podstawowe uruchomienie
 
 ```bash
-# Uruchom wszystkie zadania
-ansible-playbook -i inventory/hosts.yml site.yml
+# Domyślny inventory (inventory/hosts.yml)
+./run-automation.sh
 
-# Uruchom konkretny moduł
-ansible-playbook -i inventory/hosts.yml playbooks/system/system-update.yml
+# Określony plik inventory
+./run-automation.sh -i inventory/production.yml
+./run-automation.sh -i inventory/staging.yml
+./run-automation.sh -i inventory/development.yml
 
-# Użyj extra-vars
-ansible-playbook -i inventory/hosts.yml site.yml \
-  --extra-vars "enable_firewall=true update_system=true"
+# Z extra-vars i konkretnym inventory
+./run-automation.sh -i inventory/production.yml \
+  -e "enable_firewall=true update_system=true"
 ```
 
 ### Uruchomienie z tagami
