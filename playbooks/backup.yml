@@ -1,0 +1,354 @@
+---
+# Moduł BACKUP - Zarządzanie archiwami i kopiami zapasowymi
+# Plik: playbooks/backup.yml
+# Użycie: 
+#   Archive: ./run-automation.sh backup -e "task_action=archive source=/tomcat target=./backup"
+#   Extract: ./run-automation.sh backup -e "task_action=extract source=./tomcat.tar.gz target=/tomcat"
+
+- name: "BACKUP MODULE - Zarządzanie archiwami"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Podstawowe zmienne
+    backup_action: "{{ task_action | default(action | default('')) }}"
+    backup_source: "{{ source | default('') }}"
+    backup_target: "{{ target | default('') }}"
+    
+    # Ustawienia archiwizacji
+    tmp_dir: "/tmp"
+    min_free_space_gb: "{{ min_space | default(1) }}"  # Minimalne miejsce w GB
+    compression_level: "{{ compression | default(6) }}"  # Poziom kompresji (1-9)
+    exclude_patterns: "{{ exclude | default('*.log,*.tmp,cache/*') }}"
+    
+    # Nazwy plików
+    timestamp: "{{ ansible_date_time.epoch }}"
+    hostname: "{{ inventory_hostname }}"
+    archive_name: "{{ (backup_source | basename) + '_' + hostname + '_' + timestamp + '.tar.gz' }}"
+    remote_archive_path: "{{ tmp_dir }}/{{ archive_name }}"
+    local_target_path: "{{ backup_target }}/{{ archive_name }}"
+    
+    # Ścieżka bezwzględna dla extract (względem katalogu, z którego uruchamiamy skrypt)
+    absolute_source_path: "{{ backup_source if backup_source.startswith('/') else lookup('env', 'PWD') + '/' + backup_source }}"
+
+  pre_tasks:
+    - name: "Sprawdź czy podano akcję"
+      fail:
+        msg: |
+          Musisz podać akcję do wykonania!
+          Użyj: ./run-automation.sh backup -e "task_action=archive|extract"
+          
+          ARCHIVE - Tworzenie kopii zapasowej:
+          ./run-automation.sh backup -e "task_action=archive source=/path/to/backup target=./local/backup/dir"
+          
+          EXTRACT - Przywracanie z kopii:
+          ./run-automation.sh backup -e "task_action=extract source=./backup.tar.gz target=/path/to/restore"
+      when: backup_action == ""
+      tags: always
+
+    - name: "Sprawdź parametry dla archive"
+      fail:
+        msg: |
+          Dla akcji 'archive' wymagane są parametry:
+          - source: katalog do zarchiwizowania (na zdalnym serwerze)
+          - target: katalog docelowy (na localhost)
+          
+          Przykład: task_action=archive source=/tomcat target=./backup
+      when: 
+        - backup_action == "archive"
+        - (backup_source == "" or backup_target == "")
+      tags: always
+
+    - name: "Sprawdź parametry dla extract"
+      fail:
+        msg: |
+          Dla akcji 'extract' wymagane są parametry:
+          - source: plik archiwum (na localhost)
+          - target: katalog docelowy (na zdalnym serwerze)
+          
+          Przykład: task_action=extract source=./backup/tomcat.tar.gz target=/tomcat
+      when: 
+        - backup_action == "extract"
+        - (backup_source == "" or backup_target == "")
+      tags: always
+
+    - name: "Wyświetl informacje o akcji"
+      debug:
+        msg: |
+          === BACKUP MODULE ===
+          Akcja: {{ backup_action | upper }}
+          {% if backup_action == "archive" %}
+          Źródło (zdalny): {{ backup_source }}
+          Cel (lokalny): {{ backup_target }}
+          Archiwum: {{ archive_name }}
+          {% elif backup_action == "extract" %}
+          Źródło (lokalny): {{ backup_source }}
+          Cel (zdalny): {{ backup_target }}
+          {% endif %}
+          Host: {{ inventory_hostname }}
+          Katalog tymczasowy: {{ tmp_dir }}
+      tags: always
+
+  tasks:
+    # === ARCHIVE TASKS ===
+    - block:
+        - name: "Sprawdź czy katalog źródłowy istnieje"
+          stat:
+            path: "{{ backup_source }}"
+          register: source_check
+          
+        - name: "Błąd - katalog źródłowy nie istnieje"
+          fail:
+            msg: "Katalog źródłowy {{ backup_source }} nie istnieje na {{ inventory_hostname }}"
+          when: not source_check.stat.exists or not source_check.stat.isdir
+
+        - name: "Sprawdź rozmiar katalogu źródłowego"
+          shell: du -sb "{{ backup_source }}" | cut -f1
+          register: source_size_bytes
+          changed_when: false
+          when: not ansible_check_mode
+
+        - name: "Sprawdź dostępne miejsce w {{ tmp_dir }}"
+          shell: df "{{ tmp_dir }}" | tail -1 | awk '{print $4*1024}'
+          register: available_space_bytes
+          changed_when: false
+          when: not ansible_check_mode
+
+        - name: "Ustaw przykładowe wartości dla dry-run"
+          set_fact:
+            source_size_bytes:
+              stdout: "1073741824"  # 1GB przykładowo
+            available_space_bytes:
+              stdout: "10737418240"  # 10GB przykładowo
+          when: ansible_check_mode
+
+        - name: "Oblicz wymagane miejsce (z marginesem 20%)"
+          set_fact:
+            source_size_gb: "{{ (source_size_bytes.stdout | int / 1024 / 1024 / 1024) | round(2) }}"
+            available_space_gb: "{{ (available_space_bytes.stdout | int / 1024 / 1024 / 1024) | round(2) }}"
+            required_space_gb: "{{ ((source_size_bytes.stdout | int * 1.2) / 1024 / 1024 / 1024) | round(2) }}"
+
+        - name: "Wyświetl informacje o miejscu"
+          debug:
+            msg: |
+              === ANALIZA MIEJSCA NA DYSKU ===
+              Rozmiar źródła: {{ source_size_gb }} GB
+              Dostępne miejsce: {{ available_space_gb }} GB
+              Wymagane miejsce: {{ required_space_gb }} GB (z marginesem)
+              Minimalne wymaganie: {{ min_free_space_gb }} GB
+
+        - name: "Sprawdź czy wystarczy miejsca"
+          fail:
+            msg: |
+              Niewystarczające miejsce na dysku!
+              Wymagane: {{ required_space_gb }} GB
+              Dostępne: {{ available_space_gb }} GB
+              Uwolnij {{ (required_space_gb | float - available_space_gb | float) | round(2) }} GB
+          when: available_space_gb | float < required_space_gb | float
+
+        - name: "Utwórz lokalny katalog docelowy"
+          file:
+            path: "{{ backup_target }}"
+            state: directory
+            mode: '0755'
+          delegate_to: localhost
+          become: false
+
+        - name: "Utwórz archiwum tar.gz na zdalnym serwerze"
+          shell: |
+            cd "{{ backup_source | dirname }}"
+            tar -czf "{{ remote_archive_path }}" \
+              --exclude-from=<(echo "{{ exclude_patterns.split(',') | join('\n') }}") \
+              -C "{{ backup_source | dirname }}" \
+              "{{ backup_source | basename }}" \
+              2>/dev/null || tar -czf "{{ remote_archive_path }}" \
+              -C "{{ backup_source | dirname }}" \
+              "{{ backup_source | basename }}"
+          register: tar_create_result
+          args:
+            executable: /bin/bash
+
+        - name: "Sprawdź czy archiwum zostało utworzone"
+          stat:
+            path: "{{ remote_archive_path }}"
+          register: archive_check
+          when: not ansible_check_mode
+
+        - name: "Błąd - nie udało się utworzyć archiwum"
+          fail:
+            msg: "Nie udało się utworzyć archiwum {{ remote_archive_path }}"
+          when: 
+            - not ansible_check_mode
+            - not archive_check.stat.exists
+
+        - name: "Pobierz archiwum na localhost"
+          fetch:
+            src: "{{ remote_archive_path }}"
+            dest: "{{ local_target_path }}"
+            flat: yes
+          register: fetch_result
+          when: not ansible_check_mode
+
+        - name: "Usuń tymczasowe archiwum ze zdalnego serwera"
+          file:
+            path: "{{ remote_archive_path }}"
+            state: absent
+          when: not ansible_check_mode
+
+        - name: "Sprawdź rozmiar pobranego archiwum"
+          stat:
+            path: "{{ local_target_path }}"
+          register: local_archive_stat
+          delegate_to: localhost
+          become: false
+          when: not ansible_check_mode
+
+        - name: "Wyświetl podsumowanie archiwizacji"
+          debug:
+            msg: |
+              === ARCHIWIZACJA {{ 'SYMULOWANA (DRY-RUN)' if ansible_check_mode else 'ZAKOŃCZONA' }} ===
+              Źródło: {{ backup_source }} ({{ source_size_gb | default('N/A') }} GB)
+              Archiwum: {{ local_target_path }}
+              {% if not ansible_check_mode and local_archive_stat is defined %}
+              Rozmiar archiwum: {{ (local_archive_stat.stat.size / 1024 / 1024) | round(2) }} MB
+              Kompresja: {{ ((1 - (local_archive_stat.stat.size | float / source_size_bytes.stdout | int)) * 100) | round(1) }}%
+              {% else %}
+              Rozmiar archiwum: Będzie obliczony po utworzeniu
+              {% endif %}
+              Status: {{ '🔍 Dry-run' if ansible_check_mode else '✅ Sukces' }}
+
+      when: backup_action == "archive"
+      tags: 
+        - backup
+        - archive
+
+    # === EXTRACT TASKS ===
+    - block:
+        - name: "Sprawdź czy plik archiwum istnieje lokalnie"
+          local_action:
+            module: stat
+            path: "{{ absolute_source_path }}"
+          register: archive_file_check
+          become: false
+
+        - name: "Błąd - plik archiwum nie istnieje"
+          fail:
+            msg: "Plik archiwum {{ backup_source }} nie istnieje na localhost (sprawdzano: {{ absolute_source_path }})"
+          when: not archive_file_check.stat.exists
+
+        - name: "Utwórz katalog docelowy na zdalnym serwerze"
+          file:
+            path: "{{ backup_target }}"
+            state: directory
+            mode: '0755'
+            owner: root
+            group: root
+
+        - name: "Wygeneruj nazwę tymczasowego pliku"
+          set_fact:
+            temp_archive_name: "restore_{{ ansible_date_time.epoch }}_{{ backup_source | basename }}"
+            temp_archive_path: "{{ tmp_dir }}/restore_{{ ansible_date_time.epoch }}_{{ backup_source | basename }}"
+
+        - name: "Skopiuj archiwum na zdalny serwer"
+          copy:
+            src: "{{ absolute_source_path }}"
+            dest: "{{ temp_archive_path }}"
+            mode: '0644'
+          register: copy_result
+
+        - name: "Sprawdź zawartość archiwum"
+          shell: tar -tzf "{{ temp_archive_path }}" | head -20
+          register: archive_contents
+          changed_when: false
+          when: not ansible_check_mode
+
+        - name: "Wyświetl zawartość archiwum"
+          debug:
+            msg: |
+              === ZAWARTOŚĆ ARCHIWUM ===
+              {{ archive_contents.stdout if not ansible_check_mode else 'Zawartość będzie sprawdzona po skopiowaniu archiwum' }}
+              {% if not ansible_check_mode and archive_contents.stdout_lines | length == 20 %}
+              ... (i więcej plików)
+              {% endif %}
+
+        - name: "Sprawdź dostępne miejsce dla ekstraktowania"
+          shell: df "{{ backup_target }}" | tail -1 | awk '{print $4*1024}'
+          register: extract_available_space
+          changed_when: false
+          when: not ansible_check_mode
+
+        - name: "Ustaw przykładowe wartości dla extract dry-run"
+          set_fact:
+            extract_available_space:
+              stdout: "10737418240"  # 10GB przykładowo
+          when: ansible_check_mode
+
+        - name: "Rozpakuj archiwum"
+          shell: |
+            cd "{{ backup_target }}"
+            tar -xzf "{{ temp_archive_path }}" --strip-components=1
+          register: extract_result
+          when: not ansible_check_mode
+
+        - name: "Usuń tymczasowe archiwum"
+          file:
+            path: "{{ temp_archive_path }}"
+            state: absent
+          when: not ansible_check_mode
+
+        - name: "Sprawdź wyniki ekstraktowania"
+          find:
+            paths: "{{ backup_target }}"
+            file_type: any
+          register: extracted_files
+          when: not ansible_check_mode
+
+        - name: "Ustaw przykładowe wartości extracted_files dla dry-run"
+          set_fact:
+            extracted_files:
+              matched: 42
+          when: ansible_check_mode
+
+        - name: "Wyświetl podsumowanie ekstraktowania"
+          debug:
+            msg: |
+              === EKSTRAKTOWANIE ZAKOŃCZONE ===
+              Archiwum: {{ backup_source }}
+              Cel: {{ backup_target }}
+              Wyekstraktowano: {{ extracted_files.matched }} plików/katalogów
+              Dostępne miejsce: {{ (extract_available_space.stdout | int / 1024 / 1024 / 1024) | round(2) }} GB
+              Status: ✅ Sukces
+
+      when: backup_action == "extract"
+      tags:
+        - backup
+        - extract
+
+    # === PODSUMOWANIE ===
+    - name: "Wyświetl instrukcje"
+      debug:
+        msg: |
+          === INSTRUKCJE BACKUP MODULE ===
+          
+          📦 TWORZENIE KOPII ZAPASOWEJ (ARCHIVE):
+          ./run-automation.sh backup -e "task_action=archive source=/path/to/backup target=./backup"
+          
+          📂 PRZYWRACANIE Z KOPII (EXTRACT):
+          ./run-automation.sh backup -e "task_action=extract source=./backup/file.tar.gz target=/path/to/restore"
+          
+          🔧 DODATKOWE OPCJE:
+          - min_space=2: Minimalne miejsce w GB (domyślnie 1)
+          - compression=9: Poziom kompresji 1-9 (domyślnie 6)
+          - exclude="*.log,*.tmp": Wzorce wykluczeń
+          
+          📋 PRZYKŁADY:
+          # Kopia Tomcat
+          ./run-automation.sh backup -e "task_action=archive source=/opt/tomcat target=./backups"
+          
+          # Przywróć Tomcat
+          ./run-automation.sh backup -e "task_action=extract source=./backups/tomcat_server1_123456.tar.gz target=/opt/tomcat"
+          
+          # Z wykluczeniami
+          ./run-automation.sh backup -e "task_action=archive source=/var/www exclude='*.log,cache/*,*.tmp' target=./www-backup"
+      tags: backup

@@ -59,6 +59,8 @@ AKCJE:
     maintenance              Tylko konserwacja
     user                     Zarządzanie użytkownikami
     sudoers                  Konfiguracja uprawnień sudo
+    install                  Instalacja pakietów systemowych
+    backup                   Zarządzanie archiwami i kopiami zapasowymi
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -94,6 +96,21 @@ PRZYKŁADY:
     
     # Sudoers z niestandardowym plikiem komend
     $0 sudoers -e "user=admin commands_file=admin_commands"
+    
+    # Instalacja pakietów
+    $0 install -e "package=vim"
+    
+    # Instalacja wielu pakietów
+    $0 install -e "package=vim,git,curl,htop"
+    
+    # Instalacja z najnowszą wersją
+    $0 install -e "package=nginx state=latest"
+    
+    # Kopia zapasowa (archive)
+    $0 backup -e "task_action=archive source=/tomcat target=./backup"
+    
+    # Przywracanie (extract)
+    $0 backup -e "task_action=extract source=./backup/tomcat_server1.tar.gz target=/tomcat"
 EOF
 }
 
@@ -158,6 +175,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         sudoers)
             PLAYBOOK="playbooks/sudoers.yml"
+            shift
+            ;;
+        install)
+            PLAYBOOK="playbooks/install.yml"
+            shift
+            ;;
+        backup)
+            PLAYBOOK="playbooks/backup.yml"
             shift
             ;;
         check)

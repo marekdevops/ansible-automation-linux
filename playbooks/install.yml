@@ -1,0 +1,189 @@
+---
+# Moduł INSTALL - Instalacja pakietów systemowych
+# Plik: playbooks/install.yml
+# Użycie: ./run-automation.sh install -e "package=vim"
+# Przykłady:
+#   ./run-automation.sh install -e "package=vim" (lub name=vim)
+#   ./run-automation.sh install -e "package=nginx state=latest"
+#   ./run-automation.sh install -e "package=python3,pip,git"
+
+- name: "INSTALL MODULE - Instalacja pakietów"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Podstawowe zmienne
+    package_name: "{{ package | default(name | default('')) }}"
+    package_state: "{{ state | default('present') }}"
+    update_cache: "{{ update | default(true) }}"
+    install_recommends: "{{ recommends | default(true) }}"
+    force_apt_get: "{{ force | default(false) }}"
+    
+    # Lista pakietów (jeśli podano wiele, oddzielone przecinkami)
+    packages_list: "{{ package_name.split(',') if ',' in package_name else [package_name] }}"
+
+  pre_tasks:
+    - name: "Sprawdź czy podano nazwę pakietu"
+      fail:
+        msg: |
+          Musisz podać nazwę pakietu do instalacji! 
+          Użyj: ./run-automation.sh install -e "package=nazwa_pakietu"
+          
+          Przykłady:
+          - Jeden pakiet: package=vim (lub name=vim)
+          - Wiele pakietów: package=vim,git,curl
+          - Ze stanem: package=nginx state=latest
+      when: package_name == ""
+      tags: always
+
+    - name: "Wyświetl informacje o instalacji"
+      debug:
+        msg: |
+          === INSTALACJA PAKIETÓW ===
+          Pakiety: {{ packages_list | join(', ') }}
+          Stan: {{ package_state }}
+          Aktualizacja cache: {{ update_cache }}
+          Rekomendacje: {{ install_recommends }}
+          System: {{ ansible_os_family }}
+          Dystrybucja: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      tags: always
+
+  tasks:
+    - name: "Sprawdź system operacyjny"
+      debug:
+        msg: "Wykryto system: {{ ansible_os_family }}"
+      tags: install
+
+    # === DEBIAN/UBUNTU ===
+    - name: "Aktualizuj cache apt (Debian/Ubuntu)"
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      tags: 
+        - install
+        - update
+
+    - name: "Zainstaluj pakiety przez apt (Debian/Ubuntu)"
+      apt:
+        name: "{{ packages_list }}"
+        state: "{{ package_state }}"
+        install_recommends: "{{ install_recommends }}"
+        force_apt_get: "{{ force_apt_get }}"
+      register: apt_install_result
+      when: ansible_os_family == "Debian"
+      tags: install
+
+    # === RHEL/CENTOS/FEDORA ===
+    - name: "Zainstaluj pakiety przez yum/dnf (RHEL/CentOS/Fedora)"
+      package:
+        name: "{{ packages_list }}"
+        state: "{{ package_state }}"
+      register: yum_install_result
+      when: ansible_os_family == "RedHat"
+      tags: install
+
+    # === ARCH LINUX ===
+    - name: "Zainstaluj pakiety przez pacman (Arch Linux)"
+      pacman:
+        name: "{{ packages_list }}"
+        state: "{{ package_state }}"
+        update_cache: "{{ update_cache }}"
+      register: pacman_install_result
+      when: ansible_os_family == "Archlinux"
+      tags: install
+
+    # === OPENSUSE ===
+    - name: "Zainstaluj pakiety przez zypper (openSUSE)"
+      zypper:
+        name: "{{ packages_list }}"
+        state: "{{ package_state }}"
+        update_cache: "{{ update_cache }}"
+      register: zypper_install_result
+      when: ansible_os_family == "Suse"
+      tags: install
+
+    # === SPRAWDZENIE WYNIKÓW ===
+    - name: "Zbierz wyniki instalacji"
+      set_fact:
+        install_result: >-
+          {% if ansible_os_family == "Debian" -%}
+            {{ apt_install_result }}
+          {%- elif ansible_os_family == "RedHat" -%}
+            {{ yum_install_result }}
+          {%- elif ansible_os_family == "Archlinux" -%}
+            {{ pacman_install_result }}
+          {%- elif ansible_os_family == "Suse" -%}
+            {{ zypper_install_result }}
+          {%- else -%}
+            {{ {'changed': false, 'msg': 'Nieobsługiwany system'} }}
+          {%- endif %}
+      tags: install
+
+    - name: "Sprawdź czy pakiety zostały zainstalowane"
+      package_facts:
+        manager: auto
+      tags: install
+
+    - name: "Wyświetl status instalacji"
+      debug:
+        msg: |
+          === STATUS INSTALACJI ===
+          {% for pkg in packages_list %}
+          {% if pkg in ansible_facts.packages %}
+          ✅ {{ pkg }}: Zainstalowany (wersja: {{ ansible_facts.packages[pkg][0].version | default('nieznana') }})
+          {% else %}
+          ❌ {{ pkg }}: Nie znaleziono lub błąd instalacji
+          {% endif %}
+          {% endfor %}
+          
+          === SZCZEGÓŁY ===
+          Zmieniono: {{ install_result.changed | default(false) }}
+          Menedżer pakietów: {{ ansible_pkg_mgr }}
+      tags: install
+
+    # === OPCJONALNE CZYSZCZENIE ===
+    - name: "Wyczyść cache pakietów (jeśli włączone)"
+      shell: |
+        {% if ansible_os_family == "Debian" %}
+        apt-get clean
+        {% elif ansible_os_family == "RedHat" %}
+        {% if ansible_distribution_major_version|int >= 8 %}
+        dnf clean all
+        {% else %}
+        yum clean all
+        {% endif %}
+        {% elif ansible_os_family == "Archlinux" %}
+        pacman -Sc --noconfirm
+        {% elif ansible_os_family == "Suse" %}
+        zypper clean
+        {% endif %}
+      when: 
+        - cleanup is defined 
+        - cleanup | bool
+      tags: 
+        - install
+        - cleanup
+
+    # === PODSUMOWANIE ===
+    - name: "Wyświetl podsumowanie"
+      debug:
+        msg: |
+          === PODSUMOWANIE INSTALACJI ===
+          System: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Pakiety: {{ packages_list | join(', ') }}
+          Status: {{ 'Zainstalowano pomyślnie' if install_result.changed else 'Już były zainstalowane' }}
+          Menedżer: {{ ansible_pkg_mgr }}
+          
+          === POLECENIA SPRAWDZAJĄCE ===
+          {% for pkg in packages_list %}
+          Sprawdź {{ pkg }}: which {{ pkg }} || dpkg -l | grep {{ pkg }}
+          {% endfor %}
+          
+          === PRZYKŁADY UŻYCIA ===
+          Instalacja z aktualizacją: ./run-automation.sh install -e "name=htop update=true"
+          Wiele pakietów: ./run-automation.sh install -e "name=vim,git,curl"
+          Najnowsza wersja: ./run-automation.sh install -e "name=nginx state=latest"
+          Z czyszczeniem: ./run-automation.sh install -e "name=docker.io cleanup=true"
+      tags: install
