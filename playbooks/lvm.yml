@@ -1,0 +1,304 @@
+---
+# Moduł LVM - Zarządzanie dyskami i wolumenami LVM
+# Plik: playbooks/lvm.yml
+# Użycie:
+#   Check: ./run-automation.sh lvm -e "task_action=check"
+#   Create: ./run-automation.sh lvm -e "task_action=create disk=/dev/sdb size=20G name=/tomcat"
+#   Extend: ./run-automation.sh lvm -e "task_action=extend lv_name=tomcat-lv vg_name=vg01 size=+10G"
+
+- name: "LVM MODULE - Zarządzanie dyskami i wolumenami LVM"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Podstawowe zmienne
+    lvm_action: "{{ task_action | default('check') }}"
+    
+    # Parametry dla tworzenia partycji
+    target_disk: "{{ disk | default('') }}"
+    partition_size: "{{ size | default('') }}"
+    mount_name: "{{ name | default('') }}"
+    partition_count: "{{ part_count | default(1) | int }}"
+    
+    # Parametry dla rozszerzania
+    logical_volume: "{{ lv_name | default('') }}"
+    volume_group: "{{ vg_name | default('') }}"
+    extend_size: "{{ size | default('') }}"
+    
+    # Nazwy
+    default_vg_name: "{{ vg_name | default('vg-data') }}"
+    filesystem_type: "{{ fstype | default('xfs') }}"
+
+  tasks:
+    # === INFORMACJE O AKCJI ===
+    - name: "Wyświetl informacje o akcji LVM"
+      debug:
+        msg: |
+          === LVM MODULE ===
+          Akcja: {{ task_action | upper }}
+          {% if task_action == "create" %}
+          Dysk: {{ target_disk }}
+          Rozmiar: {{ partition_size }}
+          Punkt montowania: {{ mount_name }}
+          Liczba partycji: {{ partition_count }}
+          System plików: {{ filesystem_type }}
+          {% elif task_action == "extend" %}
+          LV: {{ logical_volume }}
+          VG: {{ volume_group }}
+          Rozszerzenie: {{ extend_size }}
+          {% endif %}
+      tags: lvm
+
+    # === CHECK TASKS - Sprawdzenie stanu LVM ===
+    - block:
+        - name: "Sprawdź dostępne dyski blokowe"
+          shell: lsblk -dnro NAME,SIZE,TYPE,MOUNTPOINT | grep -E "disk|part"
+          register: block_devices
+          changed_when: false
+          check_mode: no
+          
+        - name: "Sprawdź nieużywane dyski"
+          shell: |
+            # Sprawdź dyski bez partycji
+            for disk in $(lsblk -dnro NAME,TYPE | awk '$2=="disk" {print $1}'); do
+              if ! lsblk /dev/$disk | grep -q part; then
+                size=$(lsblk -dnro SIZE /dev/$disk)
+                echo "/dev/$disk ($size)"
+              fi
+            done
+          register: truly_unused_disks
+          changed_when: false
+          check_mode: no
+
+        - name: "Sprawdź wszystkie dyski i partycje"
+          shell: |
+            lsblk -ro NAME,SIZE,TYPE,MOUNTPOINT | grep -E "disk|part" | head -10
+          register: all_disks_info
+          changed_when: false
+          check_mode: no
+
+        - name: "Sprawdź istniejące Volume Groups"
+          shell: vgs --noheadings -o vg_name,vg_size,vg_free | sed 's/^[ ]*//'
+          register: volume_groups
+          changed_when: false
+          failed_when: false
+          check_mode: no
+
+        - name: "Sprawdź istniejące Logical Volumes"
+          shell: lvs --noheadings -o lv_name,vg_name,lv_size | sed 's/^[ ]*//'
+          register: logical_volumes
+          changed_when: false
+          failed_when: false
+          check_mode: no
+
+        - name: "Sprawdź zamontowane systemy plików"
+          shell: df -h | grep -E "^/dev/"
+          register: mounted_filesystems
+          changed_when: false
+          failed_when: false
+          check_mode: no
+
+        - name: "📊 RAPORT LVM"
+          debug:
+            msg: 
+              - "=================================================================================="
+              - "                          📊 RAPORT STANU LVM"
+              - "=================================================================================="
+              - "🔍 WSZYSTKIE DYSKI:"
+              - "{{ all_disks_info.stdout }}"
+              - ""
+              - "💾 CAŁKOWICIE NIEUŻYWANE: {{ truly_unused_disks.stdout_lines | join(', ') if truly_unused_disks.stdout_lines | length > 0 else 'Brak' }}"
+              - ""
+              - "📦 VG: {{ volume_groups.stdout_lines | length }} | 💿 LV: {{ logical_volumes.stdout_lines | length }}"
+              - ""
+              - "🗂️ ZAMONTOWANE SYSTEMY PLIKÓW:"
+              - "{{ mounted_filesystems.stdout }}"
+              - ""
+              - "{{ '✅ DOSTĘPNE DYSKI DO PARTYCJONOWANIA' if truly_unused_disks.stdout_lines | length > 0 else '⚠️  BRAK CAŁKOWICIE NIEUŻYWANYCH DYSKÓW' }}"
+              - "{{ '🔧 PRZYKŁAD: ./run-automation.sh lvm -e \"task_action=create disk=' + truly_unused_disks.stdout_lines[0].split()[0] + ' size=50G name=/data\"' if truly_unused_disks.stdout_lines | length > 0 else '💡 MOŻNA ROZSZERZAĆ ISTNIEJĄCE WOLUMENY LVM' }}"
+              - "=================================================================================="
+          when: task_action == "check"
+          tags:
+            - lvm
+            - check
+
+      when: task_action == "check"
+      tags:
+        - lvm
+        - check
+
+    # === CREATE TASKS - Tworzenie nowych wolumenów ===
+    - block:
+        - name: "Sprawdź parametry dla tworzenia"
+          fail:
+            msg: |
+              Dla akcji 'create' wymagane są parametry:
+              - disk: ścieżka do dysku (np. /dev/sdb)
+              - size: rozmiar wolumenu (np. 20G)
+              - name: punkt montowania (np. /tomcat)
+              
+              Przykład: task_action=create disk=/dev/sdb size=20G name=/tomcat
+          when: target_disk == "" or partition_size == "" or mount_name == ""
+
+        - name: "Sprawdź czy dysk istnieje"
+          stat:
+            path: "{{ target_disk }}"
+          register: disk_check
+
+        - name: "Błąd - dysk nie istnieje"
+          fail:
+            msg: "Dysk {{ target_disk }} nie istnieje"
+          when: not disk_check.stat.exists
+
+        - name: "Sprawdź czy dysk jest nieużywany"
+          shell: lsblk {{ target_disk }} -o MOUNTPOINT --noheadings | grep -v '^$' | wc -l
+          register: disk_usage_check
+          changed_when: false
+
+        - name: "Ostrzeżenie o używanym dysku"
+          debug:
+            msg: "UWAGA: Dysk {{ target_disk }} może być już używany!"
+          when: disk_usage_check.stdout | int > 0
+
+        - name: "Utwórz partycję LVM"
+          shell: |
+            echo 'n
+            p
+            1
+            
+            
+            t
+            8e
+            w' | fdisk {{ target_disk }}
+          when: not ansible_check_mode
+
+        - name: "Utwórz Physical Volume"
+          shell: pvcreate {{ target_disk }}1
+          when: not ansible_check_mode
+
+        - name: "Przetwórz nazwy punktów montowania"
+          set_fact:
+            mount_points: "{{ mount_name.split(',') }}"
+
+        - name: "Wyświetl plan tworzenia wolumenów"
+          debug:
+            msg: |
+              Plan tworzenia wolumenów:
+              Dysk: {{ target_disk }}
+              VG: {{ default_vg_name }}
+              Punkty montowania: {{ mount_points | join(', ') }}
+              System plików: {{ filesystem_type }}
+
+        - name: "Utwórz Logical Volumes"
+          shell: |
+            {% if loop.first %}
+            vgcreate {{ default_vg_name }} {{ target_disk }}1
+            {% endif %}
+            lvcreate -n {{ item.replace('/', '').replace('-', '_') }}-lv -l +{{ (100 / mount_points|length) | round | int }}%FREE {{ default_vg_name }}
+          loop: "{{ mount_points }}"
+          when: not ansible_check_mode
+
+        - name: "Utwórz system plików XFS"
+          filesystem:
+            fstype: "{{ filesystem_type }}"
+            dev: "/dev/{{ default_vg_name }}/{{ item.replace('/', '').replace('-', '_') }}-lv"
+          loop: "{{ mount_points }}"
+          when: not ansible_check_mode
+
+        - name: "Utwórz katalogi punktów montowania"
+          file:
+            path: "{{ item }}"
+            state: directory
+            mode: '0755'
+          loop: "{{ mount_points }}"
+          when: not ansible_check_mode
+
+        - name: "Dodaj do /etc/fstab"
+          lineinfile:
+            path: /etc/fstab
+            line: "/dev/{{ default_vg_name }}/{{ item.replace('/', '').replace('-', '_') }}-lv {{ item }} {{ filesystem_type }} defaults 0 0"
+            backup: yes
+          loop: "{{ mount_points }}"
+          when: not ansible_check_mode
+
+        - name: "Sprawdź utworzone wolumeny"
+          shell: |
+            echo "=== UTWORZONE WOLUMENY ==="
+            lvs | grep {{ default_vg_name }}
+            echo ""
+            echo "=== ZAMONTOWANE ==="
+            df -h | grep {{ default_vg_name }}
+          register: created_volumes
+          when: not ansible_check_mode
+
+        - name: "Wyświetl podsumowanie tworzenia"
+          debug:
+            msg: |
+              === SUKCES - WOLUMENY UTWORZONE ===
+              {{ created_volumes.stdout }}
+          when: not ansible_check_mode
+
+      when: task_action == "create"
+      tags:
+        - lvm
+        - create
+
+    # === EXTEND TASKS - Rozszerzanie wolumenów ===
+    - block:
+        - name: "Sprawdź parametry dla rozszerzania"
+          fail:
+            msg: |
+              Dla akcji 'extend' wymagane są parametry:
+              - lv_name: nazwa Logical Volume
+              - vg_name: nazwa Volume Group
+              - size: rozmiar rozszerzenia (np. +10G lub 30G)
+              
+              Przykład: task_action=extend lv_name=tomcat-lv vg_name=vg-data size=+10G
+          when: logical_volume == "" or volume_group == "" or extend_size == ""
+
+        - name: "Sprawdź czy Logical Volume istnieje"
+          shell: lvs {{ volume_group }}/{{ logical_volume }} --noheadings
+          register: lv_check
+          failed_when: false
+          changed_when: false
+
+        - name: "Błąd - Logical Volume nie istnieje"
+          fail:
+            msg: "Logical Volume {{ volume_group }}/{{ logical_volume }} nie istnieje"
+          when: lv_check.rc != 0
+
+        - name: "Sprawdź rozmiar przed rozszerzeniem"
+          shell: lvs {{ volume_group }}/{{ logical_volume }} --noheadings -o lv_size
+          register: size_before
+          changed_when: false
+
+        - name: "Rozszerz Logical Volume"
+          shell: |
+            lvextend -L {{ extend_size }} /dev/{{ volume_group }}/{{ logical_volume }}
+            xfs_growfs /dev/{{ volume_group }}/{{ logical_volume }}
+          when: not ansible_check_mode
+
+        - name: "Sprawdź rozmiar po rozszerzeniu"
+          shell: lvs {{ volume_group }}/{{ logical_volume }} --noheadings -o lv_size
+          register: size_after
+          changed_when: false
+          when: not ansible_check_mode
+
+        - name: "Wyświetl podsumowanie rozszerzania"
+          debug:
+            msg: |
+              === SUKCES - WOLUMIN ROZSZERZONY ===
+              LV: {{ logical_volume }}
+              VG: {{ volume_group }}
+              Rozmiar przed: {{ size_before.stdout.strip() }}
+              {% if not ansible_check_mode %}
+              Rozmiar po: {{ size_after.stdout.strip() }}
+              {% endif %}
+              Rozszerzenie: {{ extend_size }}
+          when: not ansible_check_mode
+
+      when: task_action == "extend"
+      tags:
+        - lvm
+        - extend

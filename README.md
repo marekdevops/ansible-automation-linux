@@ -234,6 +234,16 @@ ansible-playbook -i inventory/hosts.yml playbooks/monitoring/system-monitoring.y
   --extra-vars "monitoring_type=prometheus grafana_enabled=true"
 ```
 
+## 📚 Dokumentacja modułów
+
+- 👤 [USER MODULE](docs/USER-MODULE.md) - Zarządzanie użytkownikami
+- 🔐 [SUDOERS MODULE](docs/SUDOERS-MODULE.md) - Konfiguracja sudo
+- 📦 [INSTALL MODULE](docs/INSTALL-MODULE.md) - Instalacja pakietów  
+- 🗄️ [BACKUP MODULE](docs/BACKUP-MODULE.md) - Backup i archiwa
+- 💾 [LVM MODULE](docs/LVM-MODULE.md) - Zarządzanie dyskami LVM
+- 🔧 [INVENTORY USAGE](docs/INVENTORY-USAGE.md) - Konfiguracja inventory
+- 🔑 [SSH SUDO CONFIG](docs/SSH-SUDO-CONFIG.md) - Konfiguracja SSH i sudo
+
 ## 🤝 Rozwój
 
 Aby dodać nowy moduł:
@@ -242,6 +252,7 @@ Aby dodać nowy moduł:
 2. Dodaj odpowiednie zmienne do `vars/`
 3. Zaktualizuj `site.yml`
 4. Dodaj dokumentację do README.md
+5. Uaktualnij `run-automation.sh` o nowy moduł
 
 ## 📄 Licencja
 

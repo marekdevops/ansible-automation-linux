@@ -61,6 +61,7 @@ AKCJE:
     sudoers                  Konfiguracja uprawnień sudo
     install                  Instalacja pakietów systemowych
     backup                   Zarządzanie archiwami i kopiami zapasowymi
+    lvm                      Zarządzanie dyskami i wolumenami LVM
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -111,6 +112,15 @@ PRZYKŁADY:
     
     # Przywracanie (extract)
     $0 backup -e "task_action=extract source=./backup/tomcat_server1.tar.gz target=/tomcat"
+    
+    # Sprawdzenie dysków LVM
+    $0 lvm -e "task_action=check"
+    
+    # Utworzenie wolumenu LVM
+    $0 lvm -e "task_action=create disk=/dev/sdb size=20G name=/tomcat"
+    
+    # Rozszerzenie wolumenu LVM
+    $0 lvm -e "task_action=extend lv_name=tomcat-lv vg_name=vg-data size=+10G"
 EOF
 }
 
@@ -183,6 +193,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         backup)
             PLAYBOOK="playbooks/backup.yml"
+            shift
+            ;;
+        lvm)
+            PLAYBOOK="playbooks/lvm.yml"
             shift
             ;;
         check)

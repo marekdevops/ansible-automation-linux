@@ -252,3 +252,78 @@ pipeline {
     }
 }
 ```
+
+## 💾 LVM MODULE - Zarządzanie dyskami i wolumenami
+
+### Podstawowe użycie
+```bash
+# Sprawdź stan dysków i LVM
+./run-automation.sh -i inventory/localhost.yml lvm -e "task_action=check"
+
+# Utwórz nowy wolumin (50GB na /data)
+./run-automation.sh -i inventory/production.yml lvm \
+  -e "task_action=create disk=/dev/sdb size=50G name=/data"
+
+# Rozszerz istniejący wolumin o 20GB
+./run-automation.sh -i inventory/production.yml lvm \
+  -e "task_action=extend lv_name=data-lv vg_name=vg-system size=+20G"
+```
+
+### Zaawansowane scenariusze
+```bash
+# Wiele wolumenów na jednym dysku (serwer WWW)
+./run-automation.sh -i inventory/webservers.yml lvm \
+  -e "task_action=create disk=/dev/sdc size=200G name=/var/www,/var/log,/opt"
+
+# Serwer bazy danych (500GB dla PostgreSQL)
+./run-automation.sh -i inventory/databases.yml lvm \
+  -e "task_action=create disk=/dev/sdd size=500G name=/var/lib/postgresql"
+
+# Serwer aplikacji z wieloma wolumenami
+./run-automation.sh -i inventory/appservers.yml lvm \
+  -e "task_action=create disk=/dev/sde size=300G name=/opt/tomcat,/data/uploads,/var/log/tomcat"
+```
+
+### Testowanie i bezpieczeństwo
+```bash
+# ZAWSZE testuj przed wykonaniem na produkcji (dry-run)
+./run-automation.sh -i inventory/production.yml lvm \
+  -e "task_action=create disk=/dev/sdb size=100G name=/data" -c
+
+# Sprawdź wynik i jeśli OK, wykonaj bez -c
+./run-automation.sh -i inventory/production.yml lvm \
+  -e "task_action=create disk=/dev/sdb size=100G name=/data"
+
+# Monitoruj po operacji
+sudo vgs    # Volume Groups
+sudo lvs    # Logical Volumes  
+df -h       # Punkty montowania
+```
+
+### Integracja z backupami
+```bash
+# 1. Utwórz wolumin dla backupów
+./run-automation.sh -i inventory/production.yml lvm \
+  -e "task_action=create disk=/dev/sdf size=1T name=/backup"
+
+# 2. Następnie konfiguruj backup (po utworzeniu LVM)
+./run-automation.sh -i inventory/production.yml backup \
+  -e "task_action=archive source=/var/www dest=/backup/www-$(date +%Y%m%d).tar.gz"
+```
+
+## 📊 Monitoring i troubleshooting
+
+### Sprawdzanie stanu systemu po deployment
+```bash
+# Status wszystkich usług
+ansible -i inventory/production.yml all -a "systemctl list-failed" -b
+
+# Użycie dysków
+ansible -i inventory/production.yml all -a "df -h" -b
+
+# Status LVM (jeśli używany)
+ansible -i inventory/production.yml all -a "sudo vgs && sudo lvs" -b
+
+# Sprawdzenie logów systemowych
+ansible -i inventory/production.yml all -a "journalctl --since '10 minutes ago' --no-pager" -b
+```
