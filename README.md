@@ -241,6 +241,7 @@ ansible-playbook -i inventory/hosts.yml playbooks/monitoring/system-monitoring.y
 - 📦 [INSTALL MODULE](docs/INSTALL-MODULE.md) - Instalacja pakietów  
 - 🗄️ [BACKUP MODULE](docs/BACKUP-MODULE.md) - Backup i archiwa
 - 💾 [LVM MODULE](docs/LVM-MODULE.md) - Zarządzanie dyskami LVM
+- 📊 [RAPORTINFRA MODULE](docs/RAPORTINFRA-MODULE.md) - Raport infrastruktury serwerów
 - 🔧 [INVENTORY USAGE](docs/INVENTORY-USAGE.md) - Konfiguracja inventory
 - 🔑 [SSH SUDO CONFIG](docs/SSH-SUDO-CONFIG.md) - Konfiguracja SSH i sudo
 

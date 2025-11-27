@@ -62,6 +62,7 @@ AKCJE:
     install                  Instalacja pakietów systemowych
     backup                   Zarządzanie archiwami i kopiami zapasowymi
     lvm                      Zarządzanie dyskami i wolumenami LVM
+    raportinfra              Raport infrastruktury serwerów (CPU, RAM, Dyski, OS)
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -121,6 +122,15 @@ PRZYKŁADY:
     
     # Rozszerzenie wolumenu LVM
     $0 lvm -e "task_action=extend lv_name=tomcat-lv vg_name=vg-data size=+10G"
+    
+    # Raport infrastruktury (format tekstowy)
+    $0 raportinfra -i inventory/production.yml
+    
+    # Raport infrastruktury (format JSON)
+    $0 raportinfra -i inventory/production.yml -e "format=json"
+    
+    # Raport infrastruktury (format CSV - dla wielu serwerów)
+    $0 raportinfra -i inventory/production.yml -e "format=csv"
 EOF
 }
 
@@ -197,6 +207,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         lvm)
             PLAYBOOK="playbooks/lvm.yml"
+            shift
+            ;;
+        raportinfra)
+            PLAYBOOK="playbooks/raportinfra.yml"
             shift
             ;;
         check)

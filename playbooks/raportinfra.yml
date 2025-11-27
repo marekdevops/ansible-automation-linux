@@ -1,0 +1,191 @@
+---
+# Moduł RAPORTINFRA - Raport infrastruktury serwerów
+# Plik: playbooks/raportinfra.yml
+# Użycie:
+#   ./run-automation.sh raportinfra -i inventory/production.yml
+#   ./run-automation.sh raportinfra -i inventory/production.yml -e "format=json"
+
+- name: "RAPORTINFRA MODULE - Raport infrastruktury"
+  hosts: all
+  gather_facts: true
+  become: false
+  
+  vars:
+    output_format: "{{ format | default('text') }}"
+    
+  tasks:
+    # === ZBIERANIE INFORMACJI ===
+    - name: "Zbierz informacje o CPU"
+      set_fact:
+        cpu_info:
+          model: "{{ ansible_processor[2] | default(ansible_processor[0]) }}"
+          cores: "{{ ansible_processor_cores }}"
+          vcpus: "{{ ansible_processor_vcpus }}"
+          threads_per_core: "{{ ansible_processor_threads_per_core }}"
+      tags: raportinfra
+
+    - name: "Zbierz informacje o pamięci RAM"
+      set_fact:
+        ram_info:
+          total_mb: "{{ ansible_memtotal_mb }}"
+          total_gb: "{{ (ansible_memtotal_mb / 1024) | round(2) }}"
+          free_mb: "{{ ansible_memfree_mb }}"
+          free_gb: "{{ (ansible_memfree_mb / 1024) | round(2) }}"
+          used_percent: "{{ (((ansible_memtotal_mb - ansible_memfree_mb) / ansible_memtotal_mb) * 100) | round(1) }}"
+      tags: raportinfra
+
+    - name: "Zbierz informacje o dyskach"
+      set_fact:
+        disk_info: "{{ ansible_devices | dict2items | 
+                       selectattr('value.removable', 'equalto', '0') |
+                       rejectattr('key', 'match', '^loop.*') |
+                       rejectattr('key', 'match', '^dm-.*') |
+                       list }}"
+      tags: raportinfra
+
+    - name: "Oblicz całkowitą pojemność dysków"
+      shell: |
+        total=0
+        for disk in {{ disk_info | map(attribute='key') | join(' ') }}; do
+          size=$(lsblk -bdn -o SIZE /dev/$disk 2>/dev/null || echo 0)
+          total=$((total + size))
+        done
+        echo "scale=2; $total / 1024 / 1024 / 1024" | bc
+      register: disk_size_calc
+      changed_when: false
+      tags: raportinfra
+
+    - name: "Ustaw całkowitą pojemność dysków"
+      set_fact:
+        total_disk_size_gb: "{{ disk_size_calc.stdout | default('0') }}"
+      tags: raportinfra
+
+    - name: "Zbierz informacje o systemie operacyjnym"
+      set_fact:
+        os_info:
+          distribution: "{{ ansible_distribution }}"
+          version: "{{ ansible_distribution_version }}"
+          full_name: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          architecture: "{{ ansible_architecture }}"
+      tags: raportinfra
+
+    - name: "Zbierz informacje o sieci"
+      set_fact:
+        network_info:
+          hostname: "{{ ansible_hostname }}"
+          fqdn: "{{ ansible_fqdn }}"
+          default_ipv4: "{{ ansible_default_ipv4.address | default('N/A') }}"
+          interfaces: "{{ ansible_interfaces | length }}"
+      tags: raportinfra
+
+    - name: "Sprawdź czas działania (uptime)"
+      shell: uptime -p
+      register: uptime_info
+      changed_when: false
+      failed_when: false
+      tags: raportinfra
+
+    - name: "Sprawdź obciążenie systemu"
+      set_fact:
+        load_info:
+          load_1min: "{{ ansible_loadavg['1m'] }}"
+          load_5min: "{{ ansible_loadavg['5m'] }}"
+          load_15min: "{{ ansible_loadavg['15m'] }}"
+      tags: raportinfra
+
+    # === RAPORT TEKSTOWY ===
+    - name: "📊 RAPORT INFRASTRUKTURY"
+      debug:
+        msg:
+          - "=================================================================================="
+          - "                    📊 RAPORT INFRASTRUKTURY SERWERA"
+          - "=================================================================================="
+          - ""
+          - "🖥️  INFORMACJE PODSTAWOWE:"
+          - "   Hostname: {{ network_info.hostname }}"
+          - "   FQDN: {{ network_info.fqdn }}"
+          - "   IP: {{ network_info.default_ipv4 }}"
+          - "   Uptime: {{ uptime_info.stdout | default('N/A') }}"
+          - ""
+          - "💻 PROCESOR (CPU):"
+          - "   Model: {{ cpu_info.model }}"
+          - "   Rdzenie fizyczne: {{ cpu_info.cores }}"
+          - "   vCPU: {{ cpu_info.vcpus }}"
+          - "   Wątki na rdzeń: {{ cpu_info.threads_per_core }}"
+          - "   Obciążenie: {{ load_info.load_1min }} (1min) | {{ load_info.load_5min }} (5min) | {{ load_info.load_15min }} (15min)"
+          - ""
+          - "💾 PAMIĘĆ RAM:"
+          - "   Całkowita: {{ ram_info.total_gb }} GB ({{ ram_info.total_mb }} MB)"
+          - "   Wolna: {{ ram_info.free_gb }} GB ({{ ram_info.free_mb }} MB)"
+          - "   Wykorzystanie: {{ ram_info.used_percent }}%"
+          - ""
+          - "💿 DYSKI:"
+          - "   Liczba dysków: {{ disk_info | length }}"
+          - "   Całkowita pojemność: ~{{ total_disk_size_gb }} GB"
+          - "   Lista dysków:"
+          - "{% for disk in disk_info %}   - {{ disk.key }}: {{ disk.value.size }} ({{ disk.value.model | default('Unknown') }}){% endfor %}"
+          - ""
+          - "🐧 SYSTEM OPERACYJNY:"
+          - "   Dystrybucja: {{ os_info.full_name }}"
+          - "   Kernel: {{ os_info.kernel }}"
+          - "   Architektura: {{ os_info.architecture }}"
+          - ""
+          - "🌐 SIEĆ:"
+          - "   Interfejsy: {{ network_info.interfaces }}"
+          - "   IPv4: {{ network_info.default_ipv4 }}"
+          - ""
+          - "=================================================================================="
+      when: output_format == "text"
+      tags: raportinfra
+
+    # === RAPORT JSON ===
+    - name: "📊 RAPORT INFRASTRUKTURY (JSON)"
+      debug:
+        msg:
+          hostname: "{{ network_info.hostname }}"
+          fqdn: "{{ network_info.fqdn }}"
+          ip_address: "{{ network_info.default_ipv4 }}"
+          uptime: "{{ uptime_info.stdout | default('N/A') }}"
+          cpu:
+            model: "{{ cpu_info.model }}"
+            cores: "{{ cpu_info.cores }}"
+            vcpus: "{{ cpu_info.vcpus }}"
+            threads_per_core: "{{ cpu_info.threads_per_core }}"
+            load_1min: "{{ load_info.load_1min }}"
+            load_5min: "{{ load_info.load_5min }}"
+            load_15min: "{{ load_info.load_15min }}"
+          ram:
+            total_gb: "{{ ram_info.total_gb }}"
+            total_mb: "{{ ram_info.total_mb }}"
+            free_gb: "{{ ram_info.free_gb }}"
+            free_mb: "{{ ram_info.free_mb }}"
+            used_percent: "{{ ram_info.used_percent }}"
+          disks:
+            count: "{{ disk_info | length }}"
+            total_size_gb: "{{ total_disk_size_gb }}"
+            details: "{{ disk_info | map(attribute='key') | list }}"
+          os:
+            distribution: "{{ os_info.distribution }}"
+            version: "{{ os_info.version }}"
+            kernel: "{{ os_info.kernel }}"
+            architecture: "{{ os_info.architecture }}"
+          network:
+            interfaces_count: "{{ network_info.interfaces }}"
+            ipv4: "{{ network_info.default_ipv4 }}"
+      when: output_format == "json"
+      tags: raportinfra
+
+    # === RAPORT CSV (dla wielu serwerów) ===
+    - name: "📊 RAPORT CSV (header)"
+      debug:
+        msg: "Hostname,IP,OS,CPU_Cores,CPU_vCPUs,RAM_GB,Disk_Count,Total_Disk_GB,Uptime"
+      when: output_format == "csv"
+      run_once: true
+      tags: raportinfra
+
+    - name: "📊 RAPORT CSV (dane)"
+      debug:
+        msg: "{{ network_info.hostname }},{{ network_info.default_ipv4 }},{{ os_info.full_name }},{{ cpu_info.cores }},{{ cpu_info.vcpus }},{{ ram_info.total_gb }},{{ disk_info | length }},{{ total_disk_size_gb }},{{ uptime_info.stdout | default('N/A') }}"
+      when: output_format == "csv"
+      tags: raportinfra

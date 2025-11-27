@@ -311,6 +311,40 @@ df -h       # Punkty montowania
   -e "task_action=archive source=/var/www dest=/backup/www-$(date +%Y%m%d).tar.gz"
 ```
 
+## 📊 RAPORTINFRA MODULE - Raport infrastruktury serwerów
+
+### Podstawowe użycie
+```bash
+# Raport pojedynczego serwera (format tekstowy)
+./run-automation.sh raportinfra -i inventory/localhost.yml
+
+# Raport wszystkich serwerów produkcyjnych
+./run-automation.sh raportinfra -i inventory/production.yml
+
+# Raport w formacie JSON
+./run-automation.sh raportinfra -i inventory/production.yml -e "format=json"
+
+# Raport w formacie CSV (dla wielu serwerów)
+./run-automation.sh raportinfra -i inventory/production.yml -e "format=csv"
+```
+
+### Zaawansowane scenariusze
+```bash
+# Zapisz raport do pliku z datą
+./run-automation.sh raportinfra -i inventory/production.yml > raport-$(date +%Y%m%d).txt
+
+# Raport tylko serwerów baz danych
+./run-automation.sh raportinfra -i inventory/production.yml -l databases
+
+# Generuj CSV dla analizy w Excel
+./run-automation.sh raportinfra -i inventory/hosts.yml -e "format=csv" > infra-report.csv
+
+# Porównaj środowiska
+./run-automation.sh raportinfra -i inventory/development.yml > dev.txt
+./run-automation.sh raportinfra -i inventory/production.yml > prod.txt
+diff dev.txt prod.txt
+```
+
 ## 📊 Monitoring i troubleshooting
 
 ### Sprawdzanie stanu systemu po deployment
@@ -326,4 +360,7 @@ ansible -i inventory/production.yml all -a "sudo vgs && sudo lvs" -b
 
 # Sprawdzenie logów systemowych
 ansible -i inventory/production.yml all -a "journalctl --since '10 minutes ago' --no-pager" -b
+
+# Raport infrastruktury wszystkich serwerów
+./run-automation.sh raportinfra -i inventory/production.yml
 ```
