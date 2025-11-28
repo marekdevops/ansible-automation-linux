@@ -4574,3 +4574,73 @@ match 'all'
 2025-11-27 15:24:42,948 p=786295 u=marek n=ansible | skipping: [localhost]
 2025-11-27 15:24:42,963 p=786295 u=marek n=ansible | PLAY RECAP *********************************************************************
 2025-11-27 15:24:42,963 p=786295 u=marek n=ansible | localhost                  : ok=11   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+2025-11-27 15:39:27,703 p=788021 u=marek n=ansible | PLAY [RAPORTINFRA MODULE - Raport infrastruktury] ******************************
+2025-11-27 15:39:27,707 p=788021 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-27 15:39:28,392 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,403 p=788021 u=marek n=ansible | TASK [Zbierz informacje o CPU] *************************************************
+2025-11-27 15:39:28,421 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,426 p=788021 u=marek n=ansible | TASK [Zbierz informacje o pamięci RAM] *****************************************
+2025-11-27 15:39:28,446 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,450 p=788021 u=marek n=ansible | TASK [Zbierz informacje o dyskach] *********************************************
+2025-11-27 15:39:28,473 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,478 p=788021 u=marek n=ansible | TASK [Oblicz całkowitą pojemność dysków] ***************************************
+2025-11-27 15:39:28,649 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,654 p=788021 u=marek n=ansible | TASK [Ustaw całkowitą pojemność dysków] ****************************************
+2025-11-27 15:39:28,673 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,679 p=788021 u=marek n=ansible | TASK [Zbierz informacje o systemie operacyjnym] ********************************
+2025-11-27 15:39:28,688 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,692 p=788021 u=marek n=ansible | TASK [Zbierz informacje o sieci] ***********************************************
+2025-11-27 15:39:28,712 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,716 p=788021 u=marek n=ansible | TASK [Sprawdź czas działania (uptime)] *****************************************
+2025-11-27 15:39:28,832 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,838 p=788021 u=marek n=ansible | TASK [Sprawdź obciążenie systemu] **********************************************
+2025-11-27 15:39:28,849 p=788021 u=marek n=ansible | ok: [localhost]
+2025-11-27 15:39:28,855 p=788021 u=marek n=ansible | TASK [RAPORT INFRASTRUKTURY] ***************************************************
+2025-11-27 15:39:28,885 p=788021 u=marek n=ansible | ok: [localhost] => 
+  msg:
+  - ==================================================================================
+  - '                       RAPORT INFRASTRUKTURY SERWERA'
+  - ==================================================================================
+  - ''
+  - '[SYSTEM] INFORMACJE PODSTAWOWE:'
+  - '   Hostname: marjanserver'
+  - '   FQDN: marjanserver'
+  - '   IP: 192.168.1.125'
+  - '   Uptime: up 4 days, 18 hours, 2 minutes'
+  - ''
+  - '[CPU] PROCESOR:'
+  - '   Model: AMD Ryzen 9 7900 12-Core Processor'
+  - '   Rdzenie fizyczne: 12'
+  - '   vCPU: 24'
+  - '   Wątki na rdzeń: 2'
+  - '   Obciążenie: 1.2119140625 (1min) | 0.58935546875 (5min) | 0.50927734375 (15min)'
+  - ''
+  - '[RAM] PAMIEC RAM:'
+  - '   Całkowita: 61.89 GB (63372 MB)'
+  - '   Wolna: 31.45 GB (32201 MB)'
+  - '   Wykorzystanie: 49.2%'
+  - ''
+  - '[DISK] DYSKI:'
+  - '   Liczba dysków: 1'
+  - '   Całkowita pojemność: ~1863.01 GB'
+  - '   Lista dysków:'
+  - '   - nvme0n1: 1.82 TB (WD_BLACK SN7100 2TB)'
+  - ''
+  - '[OS] SYSTEM OPERACYJNY:'
+  - '   Dystrybucja: Ubuntu 24.04'
+  - '   Kernel: 6.14.0-36-generic'
+  - '   Architektura: x86_64'
+  - ''
+  - '[NET] SIEC:'
+  - '   Interfejsy: 4'
+  - '   IPv4: 192.168.1.125'
+  - ''
+  - ==================================================================================
+2025-11-27 15:39:28,891 p=788021 u=marek n=ansible | TASK [📊 RAPORT INFRASTRUKTURY (JSON)] *****************************************
+2025-11-27 15:39:28,912 p=788021 u=marek n=ansible | skipping: [localhost]
+2025-11-27 15:39:28,919 p=788021 u=marek n=ansible | TASK [📊 RAPORT CSV (header)] **************************************************
+2025-11-27 15:39:28,938 p=788021 u=marek n=ansible | skipping: [localhost]
+2025-11-27 15:39:28,946 p=788021 u=marek n=ansible | TASK [📊 RAPORT CSV (dane)] ****************************************************
+2025-11-27 15:39:28,966 p=788021 u=marek n=ansible | skipping: [localhost]
+2025-11-27 15:39:28,981 p=788021 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-27 15:39:28,981 p=788021 u=marek n=ansible | localhost                  : ok=11   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
