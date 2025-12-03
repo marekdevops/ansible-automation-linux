@@ -388,13 +388,108 @@ EOF
 ### Integracja z innymi modułami
 ```bash
 # 1. Utwórz użytkownika aplikacji
-./run-automation.sh users -e "username=tomcat home=/opt/tomcat groups=webadmin"
+./run-automation.sh users -e "username=tomcat home=/opt/tomcat user_groups=webadmin"
 
 # 2. Skonfiguruj sudo dla użytkownika
 ./run-automation.sh sudoers -e "user=tomcat"
 
 # 3. Utwórz LVM dla katalogu aplikacji
 ./run-automation.sh lvm -e "task_action=create disk=/dev/sdb size=100G name=/opt/tomcat"
+```
+
+## 👥 USERSLDAP MODULE - Zarządzanie użytkownikami LDAP/AD
+
+### Podstawowe użycie (sss_override)
+```bash
+# Zmiana katalogu domowego dla użytkownika LDAP
+./run-automation.sh usersldap -e "username=jan.kowalski home=/home/jan"
+
+# Zmiana katalogu i shell
+./run-automation.sh usersldap -e "username=anna.nowak home=/home/anna shell=/bin/bash"
+
+# Pełna konfiguracja (katalog, shell, UID, GID)
+./run-automation.sh usersldap -e "username=piotr.wisniewski home=/home/piotr shell=/bin/bash uid=10001 gid=10001"
+
+# Tylko zmiana shell
+./run-automation.sh usersldap -e "username=user1 shell=/bin/zsh"
+```
+
+### Tryb wsadowy (z pliku YAML)
+```bash
+# Utwórz plik vars/usersldap.yml
+cat > vars/usersldap.yml << 'EOF'
+---
+usersldap_list:
+  - username: jan.kowalski
+    home: /home/jan
+  
+  - username: anna.nowak
+    home: /home/anna
+    shell: /bin/bash
+  
+  - username: piotr.wisniewski
+    home: /home/piotr
+    shell: /bin/bash
+    uid: 10001
+    gid: 10001
+EOF
+
+# Wykonaj dla wszystkich użytkowników LDAP z pliku
+./run-automation.sh usersldap -e "@vars/usersldap.yml"
+
+# Testuj przed wykonaniem (dry-run)
+./run-automation.sh usersldap -e "@vars/usersldap.yml" --check
+```
+
+### Zaawansowane scenariusze
+```bash
+# Migracja katalogów domowych dla użytkowników LDAP
+cat > vars/migrate_ldap_homes.yml << 'EOF'
+---
+usersldap_list:
+  - username: jan.kowalski
+    home: /data/users/jan
+  - username: anna.nowak
+    home: /data/users/anna
+  - username: piotr.wisniewski
+    home: /data/users/piotr
+EOF
+./run-automation.sh usersldap -i inventory/production.yml -e "@vars/migrate_ldap_homes.yml"
+
+# Konta aplikacji z niestandardowymi katalogami
+cat > vars/app_ldap_users.yml << 'EOF'
+---
+usersldap_list:
+  - username: tomcat.service
+    home: /opt/tomcat
+    shell: /bin/bash
+    uid: 999
+    gid: 999
+  
+  - username: nginx.service
+    home: /var/lib/nginx
+    shell: /usr/sbin/nologin
+    uid: 998
+    gid: 998
+EOF
+./run-automation.sh usersldap -e "@vars/app_ldap_users.yml"
+
+# Weryfikacja nadpisań SSSD
+sudo sss_override user-find
+sudo sss_override user-show jan.kowalski
+getent passwd jan.kowalski
+```
+
+### Integracja LDAP + sudo + LVM
+```bash
+# 1. Nadpisz katalog dla użytkownika LDAP
+./run-automation.sh usersldap -e "username=jan.kowalski home=/home/jan"
+
+# 2. Dodaj uprawnienia sudo
+./run-automation.sh sudoers -e "user=jan.kowalski"
+
+# 3. Utwórz LVM dla katalogów domowych
+./run-automation.sh lvm -e "task_action=create disk=/dev/sdb size=100G name=/home"
 ```
 
 ## 📊 RAPORTINFRA MODULE - Raport infrastruktury serwerów

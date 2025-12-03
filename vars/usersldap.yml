@@ -1,0 +1,42 @@
+---
+# Przykładowy plik konfiguracji użytkowników LDAP/AD
+# Użycie: ./run-automation.sh usersldap -e "@vars/usersldap.yml"
+
+usersldap_list:
+  # Użytkownik z katalogiem domowym
+  - username: jan.kowalski
+    home: /home/jan
+  
+  # Użytkownik z katalogiem i shell
+  - username: anna.nowak
+    home: /home/anna
+    shell: /bin/bash
+  
+  # Użytkownik z pełną konfiguracją
+  - username: piotr.wisniewski
+    home: /home/piotr
+    shell: /bin/bash
+    uid: 10001
+    gid: 10001
+  
+  # Użytkownik aplikacji z niestandardowym katalogiem
+  - username: tomcat.service
+    home: /opt/tomcat
+    shell: /bin/bash
+    uid: 999
+    gid: 999
+
+# Przykłady innych konfiguracji:
+#
+# # Użytkownik z tylko zmianą katalogu
+# - username: user1
+#   home: /data/users/user1
+#
+# # Użytkownik z tylko zmianą shell
+# - username: user2
+#   shell: /bin/zsh
+#
+# # Użytkownik z tylko zmianą UID/GID
+# - username: user3
+#   uid: 10005
+#   gid: 10005

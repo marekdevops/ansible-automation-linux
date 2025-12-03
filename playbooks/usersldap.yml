@@ -1,0 +1,320 @@
+---
+# Moduł zarządzania użytkownikami LDAP/AD - nadpisywanie katalogów domowych
+# Plik: playbooks/usersldap.yml
+# Użycie: ./run-automation.sh usersldap -e "username=jan.kowalski home=/home/jan"
+#         ./run-automation.sh usersldap -e "@vars/usersldap.yml"
+
+- name: "USERSLDAP MODULE - Zarządzanie użytkownikami LDAP/AD (sss_override)"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Single user mode (z extra vars)
+    # username, home, shell, uid, gid - zmienne z extra-vars
+    
+    # Multi-user mode (z pliku YAML)
+    # usersldap_list:
+    #   - username: jan.kowalski
+    #     home: /home/jan
+    #   - username: anna.nowak
+    #     home: /home/anna
+    #     shell: /bin/bash
+    #     uid: 10001
+    #     gid: 10001
+
+  pre_tasks:
+    - name: "Sprawdź tryb działania modułu"
+      set_fact:
+        is_single_user_mode: "{{ (username | default('')) != '' }}"
+        is_multi_user_mode: "{{ (usersldap_list | default([])) | length > 0 }}"
+      tags: always
+
+    - name: "Walidacja - wymagana nazwa użytkownika lub lista"
+      fail:
+        msg: |
+          Musisz podać nazwę użytkownika lub listę użytkowników!
+          
+          Single user mode:
+            ./run-automation.sh usersldap -e "username=jan.kowalski home=/home/jan"
+            ./run-automation.sh usersldap -e "username=anna.nowak home=/home/anna shell=/bin/bash"
+          
+          Multi-user mode (z pliku YAML):
+            ./run-automation.sh usersldap -e "@vars/usersldap.yml"
+      when: 
+        - not is_single_user_mode
+        - not is_multi_user_mode
+      tags: always
+
+    - name: "Sprawdź czy sssd-tools jest zainstalowany"
+      package_facts:
+        manager: auto
+      tags: always
+
+    - name: "Zainstaluj sssd-tools jeśli nie jest zainstalowany"
+      package:
+        name: sssd-tools
+        state: present
+      when: "'sssd-tools' not in ansible_facts.packages"
+      register: sssd_tools_installed
+      tags: always
+
+    - name: "Wyświetl informacje o instalacji sssd-tools"
+      debug:
+        msg: |
+          === SSSD-TOOLS ===
+          {% if sssd_tools_installed.changed %}
+          Status: Zainstalowano sssd-tools
+          {% else %}
+          Status: sssd-tools już zainstalowany
+          {% endif %}
+      when: sssd_tools_installed is defined
+      tags: always
+
+    - name: "Wyświetl informacje o trybie"
+      debug:
+        msg: |
+          === MODUŁ USERSLDAP - ZARZĄDZANIE UŻYTKOWNIKAMI LDAP/AD ===
+          Tryb: {{ 'Single User' if is_single_user_mode else 'Multi User (' + (usersldap_list | default([]) | length | string) + ' użytkowników)' }}
+          Narzędzie: sss_override (SSSD)
+          {% if is_single_user_mode %}
+          Użytkownik: {{ username | default('') }}
+          Nowy katalog domowy: {{ home | default('nie podano') }}
+          Shell: {{ shell | default('nie zmieniane') }}
+          UID: {{ uid | default('nie zmieniane') }}
+          GID: {{ gid | default('nie zmieniane') }}
+          {% endif %}
+      tags: always
+
+  tasks:
+    # ===================================
+    # SINGLE USER MODE
+    # ===================================
+    - name: "Przygotuj dane dla pojedynczego użytkownika"
+      set_fact:
+        processed_users:
+          - username: "{{ username | default('') }}"
+            home: "{{ home | default('') }}"
+            shell: "{{ shell | default('') }}"
+            uid: "{{ uid | default('') }}"
+            gid: "{{ gid | default('') }}"
+      when: is_single_user_mode
+      tags: usersldap
+
+    # ===================================
+    # MULTI USER MODE
+    # ===================================
+    - name: "Przygotuj dane dla wielu użytkowników"
+      set_fact:
+        processed_users: "{{ usersldap_list | default([]) }}"
+      when: is_multi_user_mode
+      tags: usersldap
+
+    # ===================================
+    # WSPÓLNE ZADANIA
+    # ===================================
+    - name: "Wyświetl listę użytkowników do przetworzenia"
+      debug:
+        msg: |
+          === UŻYTKOWNICY LDAP/AD DO PRZETWORZENIA ===
+          {% for user in processed_users %}
+          {{ loop.index }}. {{ user.username }}
+             - Katalog domowy: {{ user.home | default('nie zmieniane') }}
+             - Shell: {{ user.shell | default('nie zmieniane') }}
+             - UID: {{ user.uid | default('nie zmieniane') }}
+             - GID: {{ user.gid | default('nie zmieniane') }}
+          {% endfor %}
+      tags: usersldap
+
+    - name: "Sprawdź istniejące nadpisania (sss_override user-show)"
+      shell: "sss_override user-show {{ item.username }}"
+      register: existing_overrides
+      failed_when: false
+      changed_when: false
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      tags: usersldap
+
+    - name: "Wyświetl istniejące nadpisania"
+      debug:
+        msg: |
+          Użytkownik: {{ item.item.username }}
+          Status: {{ 'Ma nadpisanie' if item.rc == 0 else 'Brak nadpisania' }}
+          {% if item.rc == 0 %}
+          Aktualne wartości:
+          {{ item.stdout }}
+          {% endif %}
+      loop: "{{ existing_overrides.results }}"
+      loop_control:
+        label: "{{ item.item.username }}"
+      tags: usersldap
+
+    - name: "Usuń istniejące nadpisania (jeśli istnieją)"
+      command: "sss_override user-del {{ item.item.username }}"
+      when: item.rc == 0
+      loop: "{{ existing_overrides.results }}"
+      loop_control:
+        label: "{{ item.item.username }}"
+      register: override_deleted
+      tags: usersldap
+
+    - name: "Buduj komendę sss_override user-add"
+      set_fact:
+        override_commands: >-
+          {% set cmds = [] %}
+          {% for user in processed_users %}
+          {%   set cmd_parts = ['sss_override', 'user-add', user.username] %}
+          {%   if user.home is defined and user.home != '' %}
+          {%     set _ = cmd_parts.append('--home=' + user.home) %}
+          {%   endif %}
+          {%   if user.shell is defined and user.shell != '' %}
+          {%     set _ = cmd_parts.append('--shell=' + user.shell) %}
+          {%   endif %}
+          {%   if user.uid is defined and user.uid != '' %}
+          {%     set _ = cmd_parts.append('--uid=' + (user.uid | string)) %}
+          {%   endif %}
+          {%   if user.gid is defined and user.gid != '' %}
+          {%     set _ = cmd_parts.append('--gid=' + (user.gid | string)) %}
+          {%   endif %}
+          {%   set _ = cmds.append({'username': user.username, 'command': cmd_parts | join(' ')}) %}
+          {% endfor %}
+          {{ cmds }}
+      tags: usersldap
+
+    - name: "Wyświetl komendy do wykonania"
+      debug:
+        msg: |
+          === KOMENDY SSS_OVERRIDE ===
+          {% for cmd in override_commands %}
+          {{ loop.index }}. {{ cmd.command }}
+          {% endfor %}
+      tags: usersldap
+
+    - name: "Zastosuj nadpisania dla użytkowników LDAP/AD"
+      command: "{{ item.command }}"
+      loop: "{{ override_commands }}"
+      loop_control:
+        label: "{{ item.username }}"
+      register: override_applied
+      tags: usersldap
+
+    - name: "Utworz katalogi domowe jeśli nie istnieją"
+      file:
+        path: "{{ item.home }}"
+        state: directory
+        owner: "{{ item.username }}"
+        mode: '0755'
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      when: 
+        - item.home is defined
+        - item.home != ''
+      tags: usersldap
+
+    - name: "Restartuj usługę SSSD"
+      systemd:
+        name: sssd
+        state: restarted
+      register: sssd_restarted
+      tags: usersldap
+
+    - name: "Poczekaj na restart SSSD (3 sekundy)"
+      pause:
+        seconds: 3
+      when: sssd_restarted.changed
+      tags: usersldap
+
+    # ===================================
+    # WERYFIKACJA
+    # ===================================
+    - name: "Weryfikuj nadpisania (sss_override user-show)"
+      shell: "sss_override user-show {{ item.username }}"
+      register: final_overrides
+      failed_when: false
+      changed_when: false
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      tags: usersldap
+
+    - name: "Sprawdź użytkownika w systemie (getent)"
+      command: "getent passwd {{ item.username }}"
+      register: getent_check
+      failed_when: false
+      changed_when: false
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      tags: usersldap
+
+    # ===================================
+    # RAPORTOWANIE
+    # ===================================
+    - name: "RAPORT - Podsumowanie nadpisań LDAP/AD"
+      debug:
+        msg: |
+          ==================================================================================
+                        RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI LDAP/AD (SSS_OVERRIDE)
+          ==================================================================================
+          
+          [SUMMARY] PODSUMOWANIE:
+             Tryb: {{ 'Single User' if is_single_user_mode else 'Multi User' }}
+             Przetworzonych użytkowników: {{ processed_users | length }}
+             SSSD Tools: {{ 'Zainstalowano' if sssd_tools_installed.changed else 'Już zainstalowany' }}
+             SSSD: {{ 'Zrestartowano' if sssd_restarted.changed else 'Uruchomiony' }}
+             Status: {{ 'Dry-run (--check)' if ansible_check_mode else 'Zmiany zastosowane' }}
+          
+          [USERS] LISTA UŻYTKOWNIKÓW Z NADPISANIAMI:
+          {% for idx in range(processed_users | length) %}
+          {% set user = processed_users[idx] %}
+          {% set override_result = final_overrides.results[idx] %}
+          {% set getent_result = getent_check.results[idx] %}
+          
+          {{ loop.index }}. {{ user.username }}
+             Status: {{ 'Nadpisanie aktywne' if override_result.rc == 0 else 'BŁĄD - brak nadpisania' }}
+             Getent: {{ 'OK - użytkownik widoczny' if getent_result.rc == 0 else 'BŁĄD - użytkownik niewidoczny' }}
+          {% if not ansible_check_mode %}
+          {% if override_result.rc == 0 %}
+             Szczegóły nadpisania:
+          {{ override_result.stdout | indent(6, first=True) }}
+          {% endif %}
+          {% if getent_result.rc == 0 %}
+             Dane systemowe:
+             {{ getent_result.stdout }}
+          {% endif %}
+          {% else %}
+             (Tryb dry-run - nadpisania nie zostały zastosowane)
+          {% endif %}
+          
+          {% endfor %}
+          ==================================================================================
+      tags: usersldap
+
+    - name: "Wyświetl dodatkowe informacje"
+      debug:
+        msg: |
+          
+          [INFO] PRZYDATNE KOMENDY:
+          
+          # Wyświetl wszystkie nadpisania:
+          sudo sss_override user-find
+          
+          # Sprawdź konkretnego użytkownika:
+          sudo sss_override user-show {{ processed_users[0].username }}
+          
+          # Sprawdź użytkownika w systemie:
+          getent passwd {{ processed_users[0].username }}
+          
+          # Usuń nadpisanie:
+          sudo sss_override user-del {{ processed_users[0].username }}
+          sudo systemctl restart sssd
+          
+          # Status SSSD:
+          sudo systemctl status sssd
+          
+          # Logi SSSD:
+          sudo journalctl -u sssd -f
+      when: not ansible_check_mode
+      tags: usersldap

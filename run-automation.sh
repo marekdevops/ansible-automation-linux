@@ -59,6 +59,7 @@ AKCJE:
     maintenance              Tylko konserwacja
     user                     Zarządzanie użytkownikami (pojedynczy)
     users                    Zarządzanie użytkownikami (wielu, z YAML)
+    usersldap                Zarządzanie użytkownikami LDAP/AD (sss_override)
     sudoers                  Konfiguracja uprawnień sudo
     install                  Instalacja pakietów systemowych
     backup                   Zarządzanie archiwami i kopiami zapasowymi
@@ -102,6 +103,12 @@ PRZYKŁADY:
     
     # Wielu użytkowników z pliku YAML
     $0 users -e "@vars/users.yml"
+    
+    # Nadpisanie katalogu domowego użytkownika LDAP/AD
+    $0 usersldap -e "username=jan.kowalski home=/home/jan"
+    
+    # Wielu użytkowników LDAP z pliku YAML
+    $0 usersldap -e "@vars/usersldap.yml"
     
     # Konfiguracja sudoers
     $0 sudoers -e "user=webmaster"
@@ -205,6 +212,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         users)
             PLAYBOOK="playbooks/users.yml"
+            shift
+            ;;
+        usersldap)
+            PLAYBOOK="playbooks/usersldap.yml"
             shift
             ;;
         sudoers)

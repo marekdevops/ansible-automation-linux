@@ -5034,3 +5034,6 @@ real play
 2025-11-28 09:00:23,419 p=848110 u=marek n=ansible | skipping: [localhost]
 2025-11-28 09:00:23,434 p=848110 u=marek n=ansible | PLAY RECAP *********************************************************************
 2025-11-28 09:00:23,434 p=848110 u=marek n=ansible | localhost                  : ok=11   changed=3    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+2025-12-03 13:07:43,964 p=1281662 u=marek n=ansible | [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+2025-12-03 13:07:44,061 p=1281662 u=marek n=ansible | playbook: playbooks/usersldap.yml
