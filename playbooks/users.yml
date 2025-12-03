@@ -1,0 +1,258 @@
+---
+# Moduł zarządzania wieloma użytkownikami
+# Plik: playbooks/users.yml
+# Użycie: ./run-automation.sh users -e "username=jan user_groups=docker home=/home/jan"
+#         ./run-automation.sh users -e "@vars/users.yml"
+
+- name: "USERS MODULE - Zaawansowane zarządzanie użytkownikami"
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Single user mode (z extra vars - zmienne przekazywane przez -e)
+    # username, user_groups, home, shell, state, create_home, system, comment
+    # są pobierane bezpośrednio z extra-vars bez redefinicji
+    
+    # Multi-user mode (z pliku YAML)
+    # Format w pliku vars/users.yml:
+    # users_list:
+    #   - username: jan
+    #     user_groups: docker,wheel
+    #     home: /home/jan
+    #   - username: tomcat
+    #     user_groups: webadmin
+    #     home: /opt/tomcat
+    #     shell: /bin/bash
+    #     system: true
+
+  pre_tasks:
+    - name: "Sprawdź tryb działania modułu"
+      set_fact:
+        is_single_user_mode: "{{ (username | default('')) != '' }}"
+        is_multi_user_mode: "{{ (users_list | default([])) | length > 0 }}"
+      tags: always
+
+    - name: "Walidacja - wymagana nazwa użytkownika lub lista"
+      fail:
+        msg: |
+          Musisz podać nazwę użytkownika lub listę użytkowników!
+          
+          Single user mode:
+            ./run-automation.sh users -e "username=jan"
+            ./run-automation.sh users -e "username=jan user_groups=docker home=/home/jan"
+          
+          Multi-user mode (z pliku YAML):
+            ./run-automation.sh users -e "@vars/users.yml"
+      when: 
+        - not is_single_user_mode
+        - not is_multi_user_mode
+      tags: always
+
+    - name: "Wyświetl informacje o trybie"
+      debug:
+        msg: |
+          === MODUŁ USERS - ZARZĄDZANIE UŻYTKOWNIKAMI ===
+          Tryb: {{ 'Single User' if is_single_user_mode else 'Multi User (' + (users_list | default([]) | length | string) + ' użytkowników)' }}
+          {% if is_single_user_mode %}
+          Użytkownik: {{ username | default('') }}
+          Grupy: {{ user_groups | default('') if (user_groups | default('')) != '' else 'domyślna grupa użytkownika' }}
+          Katalog: {{ home | default('') if (home | default('')) != '' else '/home/' + (username | default('user')) }}
+          Shell: {{ shell | default('/bin/bash') }}
+          Stan: {{ state | default('present') }}
+          {% endif %}
+      tags: always
+
+  tasks:
+    # ===================================
+    # SINGLE USER MODE
+    # ===================================
+    - name: "Przygotuj dane dla pojedynczego użytkownika"
+      set_fact:
+        processed_users:
+          - username: "{{ username | default('') }}"
+            user_groups: "{{ user_groups | default('') }}"
+            home: "{{ home | default('') }}"
+            shell: "{{ shell | default('/bin/bash') }}"
+            state: "{{ state | default('present') }}"
+            create_home: "{{ create_home | default(true) }}"
+            system: "{{ system | default(false) }}"
+            comment: "{{ comment | default('') }}"
+      when: is_single_user_mode
+      tags: users
+
+    # ===================================
+    # MULTI USER MODE
+    # ===================================
+    - name: "Przygotuj dane dla wielu użytkowników"
+      set_fact:
+        processed_users: "{{ users_list | default([]) }}"
+      when: is_multi_user_mode
+      tags: users
+
+    # ===================================
+    # WSPÓLNE ZADANIA
+    # ===================================
+    - name: "Wyświetl listę użytkowników do przetworzenia"
+      debug:
+        msg: |
+          === UŻYTKOWNICY DO PRZETWORZENIA ===
+          {% for user in processed_users %}
+          {{ loop.index }}. {{ user.username }}
+             - Grupy: {{ user.user_groups | default('brak') }}
+             - Katalog: {{ user.home | default('/home/' + user.username) }}
+             - Shell: {{ user.shell | default('/bin/bash') }}
+             - Stan: {{ user.state | default('present') }}
+          {% endfor %}
+      tags: users
+
+    - name: "Sprawdź istniejących użytkowników"
+      getent:
+        database: passwd
+        key: "{{ item.username }}"
+      register: existing_users
+      failed_when: false
+      loop: "{{ processed_users }}"
+      tags: users
+
+    - name: "Przygotuj listę wszystkich grup do utworzenia"
+      set_fact:
+        all_groups: "{{ processed_users | selectattr('user_groups', 'defined') | map(attribute='user_groups') | select('string') | map('split', ',') | flatten | unique | list }}"
+      tags: users
+
+    - name: "Utwórz grupy jeśli nie istnieją"
+      group:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ all_groups }}"
+      when: 
+        - all_groups is defined
+        - all_groups | length > 0
+        - item != ''
+      tags:
+        - users
+        - groups
+
+    - name: "Utwórz/zaktualizuj użytkowników"
+      user:
+        name: "{{ item.username }}"
+        groups: "{{ item.user_groups.split(',') if item.user_groups is defined and item.user_groups != '' else omit }}"
+        append: true
+        home: "{{ item.home if item.home is defined and item.home != '' else '/home/' + item.username }}"
+        shell: "{{ item.shell | default('/bin/bash') }}"
+        create_home: "{{ item.create_home | default(true) }}"
+        system: "{{ item.system | default(false) }}"
+        comment: "{{ item.comment | default(omit) }}"
+        state: "{{ item.state | default('present') }}"
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      register: users_result
+      tags: users
+
+    - name: "Ustaw właściciela katalogów domowych"
+      file:
+        path: "{{ item.home if item.home is defined and item.home != '' else '/home/' + item.username }}"
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: '0755'
+        state: directory
+      loop: "{{ processed_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      when: 
+        - item.state | default('present') == 'present'
+        - item.create_home | default(true) | bool
+      tags: users
+
+    # ===================================
+    # RAPORTOWANIE
+    # ===================================
+    - name: "Pobierz finalne informacje o użytkownikach"
+      getent:
+        database: passwd
+        key: "{{ item.username }}"
+      register: final_users_info
+      failed_when: false
+      loop: "{{ processed_users }}"
+      when: 
+        - not ansible_check_mode
+        - item.state | default('present') == 'present'
+      tags: users
+
+    - name: "Pobierz grupy użytkowników"
+      command: "groups {{ item.username }}"
+      register: users_groups
+      changed_when: false
+      failed_when: false
+      loop: "{{ processed_users }}"
+      when: 
+        - not ansible_check_mode
+        - item.state | default('present') == 'present'
+      tags: users
+
+    - name: "RAPORT - Podsumowanie użytkowników"
+      debug:
+        msg: |
+          ==================================================================================
+                             RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI
+          ==================================================================================
+          
+          [SUMMARY] PODSUMOWANIE:
+             Tryb: {{ 'Single User' if is_single_user_mode else 'Multi User' }}
+             Przetworzonych użytkowników: {{ processed_users | length }}
+             Status: {{ 'Dry-run (--check)' if ansible_check_mode else 'Zmiany zastosowane' }}
+          
+          [USERS] LISTA UŻYTKOWNIKÓW:
+          {% for item in processed_users %}
+          {% set user_idx = loop.index0 %}
+          {% set was_existing = existing_users.results[user_idx].ansible_facts is defined %}
+          {% set user_state = item.state | default('present') %}
+          
+          {{ loop.index }}. {{ item.username }}
+             Stan: {{ 'Usunięty' if user_state == 'absent' else ('Zaktualizowany' if was_existing else 'Utworzony') }}
+          {% if user_state == 'present' and not ansible_check_mode %}
+             UID: {{ final_users_info.results[user_idx].ansible_facts.getent_passwd[item.username][1] | default('N/A') }}
+             GID: {{ final_users_info.results[user_idx].ansible_facts.getent_passwd[item.username][2] | default('N/A') }}
+             Katalog: {{ final_users_info.results[user_idx].ansible_facts.getent_passwd[item.username][4] | default(item.home | default('/home/' + item.username)) }}
+             Shell: {{ final_users_info.results[user_idx].ansible_facts.getent_passwd[item.username][5] | default(item.shell | default('/bin/bash')) }}
+             Grupy: {{ users_groups.results[user_idx].stdout | default('N/A') | regex_replace('^.*: ', '') }}
+          {% elif user_state == 'present' and ansible_check_mode %}
+             Katalog: {{ item.home | default('/home/' + item.username) }}
+             Shell: {{ item.shell | default('/bin/bash') }}
+             Grupy: {{ item.user_groups | default('domyślna') }}
+             (Tryb dry-run - zmiany nie zostały zastosowane)
+          {% endif %}
+          
+          {% endfor %}
+          ==================================================================================
+      tags: users
+
+    - name: "Wyświetl przykłady użycia"
+      debug:
+        msg: |
+          
+          [INFO] PRZYKŁADY UŻYCIA:
+          
+          # Utworzenie użytkownika z domyślnymi ustawieniami:
+          ./run-automation.sh users -e "username=jan"
+          
+          # Utworzenie użytkownika z grupami:
+          ./run-automation.sh users -e "username=jan user_groups=docker,wheel"
+          
+          # Utworzenie użytkownika z niestandardowym katalogiem:
+          ./run-automation.sh users -e "username=tomcat home=/opt/tomcat user_groups=webadmin"
+          
+          # Dodanie istniejącego użytkownika do grup:
+          ./run-automation.sh users -e "username=jan user_groups=docker,sudo"
+          
+          # Zmiana katalogu domowego:
+          ./run-automation.sh users -e "username=jan home=/home/newjan"
+          
+          # Usunięcie użytkownika:
+          ./run-automation.sh users -e "username=jan state=absent"
+          
+          # Użycie pliku YAML (vars/users.yml):
+          ./run-automation.sh users -e "@vars/users.yml"
+      when: false  # Ustaw na true aby wyświetlić pomoc
+      tags: users

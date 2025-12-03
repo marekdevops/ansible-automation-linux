@@ -57,7 +57,8 @@ AKCJE:
     services                 Tylko usługi
     monitoring               Tylko monitorowanie
     maintenance              Tylko konserwacja
-    user                     Zarządzanie użytkownikami
+    user                     Zarządzanie użytkownikami (pojedynczy)
+    users                    Zarządzanie użytkownikami (wielu, z YAML)
     sudoers                  Konfiguracja uprawnień sudo
     install                  Instalacja pakietów systemowych
     backup                   Zarządzanie archiwami i kopiami zapasowymi
@@ -92,6 +93,15 @@ PRZYKŁADY:
     
     # Użytkownik z sudo
     $0 user -e "user=admin home=default sudo=true"
+    
+    # Zarządzanie wieloma użytkownikami
+    $0 users -e "username=jan groups=docker,wheel"
+    
+    # Użytkownicy z katalogu domowego
+    $0 users -e "username=tomcat home=/opt/tomcat groups=webadmin"
+    
+    # Wielu użytkowników z pliku YAML
+    $0 users -e "@vars/users.yml"
     
     # Konfiguracja sudoers
     $0 sudoers -e "user=webmaster"
@@ -191,6 +201,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         user)
             PLAYBOOK="playbooks/user.yml"
+            shift
+            ;;
+        users)
+            PLAYBOOK="playbooks/users.yml"
             shift
             ;;
         sudoers)

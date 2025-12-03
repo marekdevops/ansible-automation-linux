@@ -1,0 +1,44 @@
+---
+# Przykładowy plik konfiguracji użytkowników
+# Użycie: ./run-automation.sh users -e "@vars/users.yml"
+
+users_list:
+  # Użytkownik z domyślnymi ustawieniami
+  - username: jan
+    comment: "Jan Kowalski - Developer"
+  
+  # Użytkownik z grupami
+  - username: piotr
+    user_groups: docker,wheel
+    comment: "Piotr Nowak - DevOps"
+  
+  # Użytkownik z niestandardowym katalogiem
+  - username: tomcat
+    home: /opt/tomcat
+    shell: /bin/bash
+    user_groups: webadmin
+    system: true
+    comment: "Tomcat Application User"
+  
+  # Użytkownik z wieloma opcjami
+  - username: dbadmin
+    home: /var/lib/dbadmin
+    shell: /bin/bash
+    user_groups: dba,sudo
+    create_home: true
+    comment: "Database Administrator"
+
+# Przykłady innych konfiguracji:
+#
+# # Użytkownik systemowy (bez katalogu domowego)
+# - username: nginx
+#   system: true
+#   create_home: false
+#   shell: /usr/sbin/nologin
+#
+# # Użytkownik do usunięcia
+# - username: olduser
+#   state: absent
+#
+# # Użytkownik z minimalną konfiguracją (tylko wymagane pole)
+# - username: simpleuser

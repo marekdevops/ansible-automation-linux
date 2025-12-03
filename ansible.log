@@ -4644,3 +4644,393 @@ match 'all'
 2025-11-27 15:39:28,966 p=788021 u=marek n=ansible | skipping: [localhost]
 2025-11-27 15:39:28,981 p=788021 u=marek n=ansible | PLAY RECAP *********************************************************************
 2025-11-27 15:39:28,981 p=788021 u=marek n=ansible | localhost                  : ok=11   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+2025-11-28 08:57:58,363 p=844838 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 08:57:58,366 p=844838 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 08:57:58,503 p=844838 u=marek n=ansible | fatal: [localhost]: FAILED! => changed=false 
+  ansible_facts: {}
+  failed_modules:
+    ansible.legacy.setup:
+      failed: true
+      module_stderr: |-
+        sudo: wymagane jest hasło
+      module_stdout: ''
+      msg: |-
+        MODULE FAILURE
+        See stdout/stderr for the exact error
+      rc: 1
+  msg: |-
+    The following modules failed to execute: ansible.legacy.setup
+2025-11-28 08:57:58,504 p=844838 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 08:57:58,504 p=844838 u=marek n=ansible | localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+2025-11-28 08:58:04,178 p=844906 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 08:58:04,181 p=844906 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 08:58:04,856 p=844906 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:58:04,860 p=844906 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-11-28 08:58:04,915 p=844906 u=marek n=ansible | fatal: [localhost]: FAILED! => 
+  msg: 'An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list
+    | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating
+    ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>,
+    original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: An unhandled exception occurred while templating ''{{ users_list | default([]) }}''. Error was a <class ''ansible.errors.AnsibleError''>, original message: recursive loop detected in template string: {{ users_list | default([]) }}. maximum recursion depth exceeded'
+2025-11-28 08:58:04,916 p=844906 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 08:58:04,916 p=844906 u=marek n=ansible | localhost                  : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+2025-11-28 08:58:50,933 p=845223 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 08:58:50,936 p=845223 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 08:58:52,623 p=845223 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:58:52,628 p=845223 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-11-28 08:58:52,650 p=845223 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:58:52,656 p=845223 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-11-28 08:58:52,664 p=845223 u=marek n=ansible | skipping: [localhost]
+2025-11-28 08:58:52,670 p=845223 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-11-28 08:58:52,693 p=845223 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERS - ZARZĄDZANIE UŻYTKOWNIKAMI ===
+    Tryb: Single User
+    Użytkownik: testuser
+    Grupy: {'all': ['localhost'], 'ungrouped': ['localhost']}
+    Katalog: /home/testuser
+    Shell: /bin/bash
+    Stan: present
+2025-11-28 08:58:52,705 p=845223 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-11-28 08:58:52,725 p=845223 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:58:52,730 p=845223 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-11-28 08:58:52,737 p=845223 u=marek n=ansible | skipping: [localhost]
+2025-11-28 08:58:52,743 p=845223 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-11-28 08:58:52,762 p=845223 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY DO PRZETWORZENIA ===
+    1. testuser
+       - Grupy: {'all': ['localhost'], 'ungrouped': ['localhost']}
+       - Katalog:
+       - Shell: /bin/bash
+       - Stan: present
+2025-11-28 08:58:52,766 p=845223 u=marek n=ansible | TASK [Sprawdź istniejących użytkowników] ***************************************
+2025-11-28 08:58:52,926 p=845223 u=marek n=ansible | ok: [localhost] => (item={'username': 'testuser', 'groups': {'all': ['localhost'], 'ungrouped': ['localhost']}, 'home': '', 'shell': '/bin/bash', 'state': 'present', 'create_home': True, 'system': False, 'comment': ''})
+2025-11-28 08:58:52,933 p=845223 u=marek n=ansible | TASK [Utwórz grupy jeśli nie istnieją] *****************************************
+2025-11-28 08:58:52,950 p=845223 u=marek n=ansible | fatal: [localhost]: FAILED! => 
+  msg: 'Unexpected templating type error occurred on ({{ processed_users | subelements(''groups'', skip_missing=True) | map(''regex_replace'', ''(.*)'', ''\\1'') | list }}): the key ''groups'' should point to a list, got {''all'': [''localhost''], ''ungrouped'': [''localhost'']}. the key ''groups'' should point to a list, got {''all'': [''localhost''], ''ungrouped'': [''localhost'']}'
+2025-11-28 08:58:52,951 p=845223 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 08:58:52,951 p=845223 u=marek n=ansible | localhost                  : ok=6    changed=0    unreachable=0    failed=1    skipped=2    rescued=0    ignored=0   
+2025-11-28 08:59:47,528 p=847510 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 08:59:47,531 p=847510 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 08:59:48,186 p=847510 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:59:48,190 p=847510 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-11-28 08:59:48,210 p=847510 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:59:48,215 p=847510 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-11-28 08:59:48,222 p=847510 u=marek n=ansible | skipping: [localhost]
+2025-11-28 08:59:48,227 p=847510 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-11-28 08:59:48,249 p=847510 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERS - ZARZĄDZANIE UŻYTKOWNIKAMI ===
+    Tryb: Single User
+    Użytkownik: testuser
+    Grupy: docker
+    Katalog: /home/testuser
+    Shell: /bin/bash
+    Stan: present
+2025-11-28 08:59:48,259 p=847510 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-11-28 08:59:48,279 p=847510 u=marek n=ansible | ok: [localhost]
+2025-11-28 08:59:48,283 p=847510 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-11-28 08:59:48,290 p=847510 u=marek n=ansible | skipping: [localhost]
+2025-11-28 08:59:48,296 p=847510 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-11-28 08:59:48,313 p=847510 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY DO PRZETWORZENIA ===
+    1. testuser
+       - Grupy: docker
+       - Katalog:
+       - Shell: /bin/bash
+       - Stan: present
+2025-11-28 08:59:48,317 p=847510 u=marek n=ansible | TASK [Sprawdź istniejących użytkowników] ***************************************
+2025-11-28 08:59:48,465 p=847510 u=marek n=ansible | ok: [localhost] => (item={'username': 'testuser', 'user_groups': 'docker', 'home': '', 'shell': '/bin/bash', 'state': 'present', 'create_home': True, 'system': False, 'comment': ''})
+2025-11-28 08:59:48,471 p=847510 u=marek n=ansible | TASK [Utwórz grupy jeśli nie istnieją] *****************************************
+2025-11-28 08:59:48,487 p=847510 u=marek n=ansible | fatal: [localhost]: FAILED! => 
+  msg: 'Unexpected templating type error occurred on ({{ processed_users | subelements(''user_groups'', skip_missing=True) | map(''regex_replace'', ''(.*)'', ''\\1'') | list }}): the key ''user_groups'' should point to a list, got ''docker''. the key ''user_groups'' should point to a list, got ''docker'''
+2025-11-28 08:59:48,487 p=847510 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 08:59:48,487 p=847510 u=marek n=ansible | localhost                  : ok=6    changed=0    unreachable=0    failed=1    skipped=2    rescued=0    ignored=0   
+2025-11-28 09:00:12,223 p=847778 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 09:00:12,227 p=847778 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 09:00:12,918 p=847778 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:12,922 p=847778 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-11-28 09:00:12,941 p=847778 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:12,946 p=847778 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-11-28 09:00:12,953 p=847778 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:12,957 p=847778 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-11-28 09:00:12,977 p=847778 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERS - ZARZĄDZANIE UŻYTKOWNIKAMI ===
+    Tryb: Single User
+    Użytkownik: testuser
+    Grupy: docker
+    Katalog: /home/testuser
+    Shell: /bin/bash
+    Stan: present
+2025-11-28 09:00:12,989 p=847778 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-11-28 09:00:13,010 p=847778 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:13,015 p=847778 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-11-28 09:00:13,022 p=847778 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:13,027 p=847778 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-11-28 09:00:13,047 p=847778 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY DO PRZETWORZENIA ===
+    1. testuser
+       - Grupy: docker
+       - Katalog:
+       - Shell: /bin/bash
+       - Stan: present
+2025-11-28 09:00:13,051 p=847778 u=marek n=ansible | TASK [Sprawdź istniejących użytkowników] ***************************************
+2025-11-28 09:00:13,202 p=847778 u=marek n=ansible | ok: [localhost] => (item={'username': 'testuser', 'user_groups': 'docker', 'home': '', 'shell': '/bin/bash', 'state': 'present', 'create_home': True, 'system': False, 'comment': ''})
+2025-11-28 09:00:13,208 p=847778 u=marek n=ansible | TASK [Przygotuj listę wszystkich grup do utworzenia] ***************************
+2025-11-28 09:00:13,230 p=847778 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:13,235 p=847778 u=marek n=ansible | TASK [Utwórz grupy jeśli nie istnieją] *****************************************
+2025-11-28 09:00:13,407 p=847778 u=marek n=ansible | changed: [localhost] => (item=docker)
+2025-11-28 09:00:13,412 p=847778 u=marek n=ansible | TASK [Utwórz/zaktualizuj użytkowników] *****************************************
+2025-11-28 09:00:13,624 p=847778 u=marek n=ansible | changed: [localhost] => (item=testuser)
+2025-11-28 09:00:13,629 p=847778 u=marek n=ansible | TASK [Ustaw właściciela katalogów domowych] ************************************
+2025-11-28 09:00:13,803 p=847778 u=marek n=ansible | --- before
++++ after
+@@ -1,2 +1,2 @@
+ path: /home/testuser
+-state: absent
++state: directory
+
+
+2025-11-28 09:00:13,803 p=847778 u=marek n=ansible | changed: [localhost] => (item=testuser)
+2025-11-28 09:00:13,804 p=847778 u=marek n=ansible | [WARNING]: failed to look up user testuser. Create user up to this point in
+real play
+
+2025-11-28 09:00:13,804 p=847778 u=marek n=ansible | [WARNING]: failed to look up group testuser. Create group up to this point in
+real play
+
+2025-11-28 09:00:13,810 p=847778 u=marek n=ansible | TASK [Pobierz finalne informacje o użytkownikach] ******************************
+2025-11-28 09:00:13,818 p=847778 u=marek n=ansible | skipping: [localhost] => (item={'username': 'testuser', 'user_groups': 'docker', 'home': '', 'shell': '/bin/bash', 'state': 'present', 'create_home': True, 'system': False, 'comment': ''}) 
+2025-11-28 09:00:13,819 p=847778 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:13,823 p=847778 u=marek n=ansible | TASK [Pobierz grupy użytkowników] **********************************************
+2025-11-28 09:00:13,832 p=847778 u=marek n=ansible | skipping: [localhost] => (item={'username': 'testuser', 'user_groups': 'docker', 'home': '', 'shell': '/bin/bash', 'state': 'present', 'create_home': True, 'system': False, 'comment': ''}) 
+2025-11-28 09:00:13,832 p=847778 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:13,837 p=847778 u=marek n=ansible | TASK [RAPORT - Podsumowanie użytkowników] **************************************
+2025-11-28 09:00:13,861 p=847778 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    ==================================================================================
+                       RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI
+    ==================================================================================
+  
+    [SUMMARY] PODSUMOWANIE:
+       Tryb: Single User
+       Przetworzonych użytkowników: 1
+       Status: Dry-run (--check)
+  
+    [USERS] LISTA UŻYTKOWNIKÓW:
+  
+    1. testuser
+       Stan: Utworzony
+       Katalog:
+       Shell: /bin/bash
+       Grupy: docker
+       (Tryb dry-run - zmiany nie zostały zastosowane)
+  
+    ==================================================================================
+2025-11-28 09:00:13,866 p=847778 u=marek n=ansible | TASK [Wyświetl przykłady użycia] ***********************************************
+2025-11-28 09:00:13,871 p=847778 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:13,886 p=847778 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 09:00:13,886 p=847778 u=marek n=ansible | localhost                  : ok=11   changed=3    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+2025-11-28 09:00:20,406 p=848110 u=marek n=ansible | PLAY [USERS MODULE - Zaawansowane zarządzanie użytkownikami] *******************
+2025-11-28 09:00:20,409 p=848110 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-28 09:00:21,097 p=848110 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:21,101 p=848110 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-11-28 09:00:21,121 p=848110 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:21,126 p=848110 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-11-28 09:00:21,133 p=848110 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:21,137 p=848110 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-11-28 09:00:21,158 p=848110 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERS - ZARZĄDZANIE UŻYTKOWNIKAMI ===
+    Tryb: Multi User (4 użytkowników)
+2025-11-28 09:00:21,169 p=848110 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-11-28 09:00:21,175 p=848110 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:21,180 p=848110 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-11-28 09:00:21,200 p=848110 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:21,206 p=848110 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-11-28 09:00:21,225 p=848110 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY DO PRZETWORZENIA ===
+    1. jan
+       - Grupy: brak
+       - Katalog: /home/jan
+       - Shell: /bin/bash
+       - Stan: present
+    2. piotr
+       - Grupy: docker,wheel
+       - Katalog: /home/piotr
+       - Shell: /bin/bash
+       - Stan: present
+    3. tomcat
+       - Grupy: webadmin
+       - Katalog: /opt/tomcat
+       - Shell: /bin/bash
+       - Stan: present
+    4. dbadmin
+       - Grupy: dba,sudo
+       - Katalog: /var/lib/dbadmin
+       - Shell: /bin/bash
+       - Stan: present
+2025-11-28 09:00:21,230 p=848110 u=marek n=ansible | TASK [Sprawdź istniejących użytkowników] ***************************************
+2025-11-28 09:00:21,384 p=848110 u=marek n=ansible | ok: [localhost] => (item={'username': 'jan', 'comment': 'Jan Kowalski - Developer'})
+2025-11-28 09:00:21,482 p=848110 u=marek n=ansible | ok: [localhost] => (item={'username': 'piotr', 'user_groups': 'docker,wheel', 'comment': 'Piotr Nowak - DevOps'})
+2025-11-28 09:00:21,579 p=848110 u=marek n=ansible | ok: [localhost] => (item={'username': 'tomcat', 'home': '/opt/tomcat', 'shell': '/bin/bash', 'user_groups': 'webadmin', 'system': True, 'comment': 'Tomcat Application User'})
+2025-11-28 09:00:21,678 p=848110 u=marek n=ansible | ok: [localhost] => (item={'username': 'dbadmin', 'home': '/var/lib/dbadmin', 'shell': '/bin/bash', 'user_groups': 'dba,sudo', 'create_home': True, 'comment': 'Database Administrator'})
+2025-11-28 09:00:21,684 p=848110 u=marek n=ansible | TASK [Przygotuj listę wszystkich grup do utworzenia] ***************************
+2025-11-28 09:00:21,704 p=848110 u=marek n=ansible | ok: [localhost]
+2025-11-28 09:00:21,708 p=848110 u=marek n=ansible | TASK [Utwórz grupy jeśli nie istnieją] *****************************************
+2025-11-28 09:00:21,872 p=848110 u=marek n=ansible | changed: [localhost] => (item=docker)
+2025-11-28 09:00:21,970 p=848110 u=marek n=ansible | changed: [localhost] => (item=wheel)
+2025-11-28 09:00:22,070 p=848110 u=marek n=ansible | changed: [localhost] => (item=webadmin)
+2025-11-28 09:00:22,173 p=848110 u=marek n=ansible | changed: [localhost] => (item=dba)
+2025-11-28 09:00:22,272 p=848110 u=marek n=ansible | ok: [localhost] => (item=sudo)
+2025-11-28 09:00:22,277 p=848110 u=marek n=ansible | TASK [Utwórz/zaktualizuj użytkowników] *****************************************
+2025-11-28 09:00:22,484 p=848110 u=marek n=ansible | changed: [localhost] => (item=jan)
+2025-11-28 09:00:22,610 p=848110 u=marek n=ansible | changed: [localhost] => (item=piotr)
+2025-11-28 09:00:22,737 p=848110 u=marek n=ansible | changed: [localhost] => (item=tomcat)
+2025-11-28 09:00:22,862 p=848110 u=marek n=ansible | changed: [localhost] => (item=dbadmin)
+2025-11-28 09:00:22,864 p=848110 u=marek n=ansible | [WARNING]: 'append' is set, but no 'groups' are specified. Use 'groups' for
+appending new groups.This will change to an error in Ansible 2.14.
+
+2025-11-28 09:00:22,869 p=848110 u=marek n=ansible | TASK [Ustaw właściciela katalogów domowych] ************************************
+2025-11-28 09:00:23,036 p=848110 u=marek n=ansible | --- before
++++ after
+@@ -1,2 +1,2 @@
+ path: /home/jan
+-state: absent
++state: directory
+
+
+2025-11-28 09:00:23,036 p=848110 u=marek n=ansible | changed: [localhost] => (item=jan)
+2025-11-28 09:00:23,138 p=848110 u=marek n=ansible | --- before
++++ after
+@@ -1,2 +1,2 @@
+ path: /home/piotr
+-state: absent
++state: directory
+
+
+2025-11-28 09:00:23,138 p=848110 u=marek n=ansible | changed: [localhost] => (item=piotr)
+2025-11-28 09:00:23,239 p=848110 u=marek n=ansible | --- before
++++ after
+@@ -1,2 +1,2 @@
+ path: /opt/tomcat
+-state: absent
++state: directory
+
+
+2025-11-28 09:00:23,239 p=848110 u=marek n=ansible | changed: [localhost] => (item=tomcat)
+2025-11-28 09:00:23,346 p=848110 u=marek n=ansible | --- before
++++ after
+@@ -1,2 +1,2 @@
+ path: /var/lib/dbadmin
+-state: absent
++state: directory
+
+
+2025-11-28 09:00:23,346 p=848110 u=marek n=ansible | changed: [localhost] => (item=dbadmin)
+2025-11-28 09:00:23,347 p=848110 u=marek n=ansible | [WARNING]: failed to look up user jan. Create user up to this point in real
+play
+
+2025-11-28 09:00:23,347 p=848110 u=marek n=ansible | [WARNING]: failed to look up group jan. Create group up to this point in real
+play
+
+2025-11-28 09:00:23,347 p=848110 u=marek n=ansible | [WARNING]: failed to look up user piotr. Create user up to this point in real
+play
+
+2025-11-28 09:00:23,347 p=848110 u=marek n=ansible | [WARNING]: failed to look up group piotr. Create group up to this point in real
+play
+
+2025-11-28 09:00:23,348 p=848110 u=marek n=ansible | [WARNING]: failed to look up user tomcat. Create user up to this point in real
+play
+
+2025-11-28 09:00:23,348 p=848110 u=marek n=ansible | [WARNING]: failed to look up group tomcat. Create group up to this point in
+real play
+
+2025-11-28 09:00:23,348 p=848110 u=marek n=ansible | [WARNING]: failed to look up user dbadmin. Create user up to this point in real
+play
+
+2025-11-28 09:00:23,348 p=848110 u=marek n=ansible | [WARNING]: failed to look up group dbadmin. Create group up to this point in
+real play
+
+2025-11-28 09:00:23,352 p=848110 u=marek n=ansible | TASK [Pobierz finalne informacje o użytkownikach] ******************************
+2025-11-28 09:00:23,361 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'jan', 'comment': 'Jan Kowalski - Developer'}) 
+2025-11-28 09:00:23,361 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'piotr', 'user_groups': 'docker,wheel', 'comment': 'Piotr Nowak - DevOps'}) 
+2025-11-28 09:00:23,362 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'tomcat', 'home': '/opt/tomcat', 'shell': '/bin/bash', 'user_groups': 'webadmin', 'system': True, 'comment': 'Tomcat Application User'}) 
+2025-11-28 09:00:23,363 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'dbadmin', 'home': '/var/lib/dbadmin', 'shell': '/bin/bash', 'user_groups': 'dba,sudo', 'create_home': True, 'comment': 'Database Administrator'}) 
+2025-11-28 09:00:23,364 p=848110 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:23,369 p=848110 u=marek n=ansible | TASK [Pobierz grupy użytkowników] **********************************************
+2025-11-28 09:00:23,378 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'jan', 'comment': 'Jan Kowalski - Developer'}) 
+2025-11-28 09:00:23,378 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'piotr', 'user_groups': 'docker,wheel', 'comment': 'Piotr Nowak - DevOps'}) 
+2025-11-28 09:00:23,379 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'tomcat', 'home': '/opt/tomcat', 'shell': '/bin/bash', 'user_groups': 'webadmin', 'system': True, 'comment': 'Tomcat Application User'}) 
+2025-11-28 09:00:23,380 p=848110 u=marek n=ansible | skipping: [localhost] => (item={'username': 'dbadmin', 'home': '/var/lib/dbadmin', 'shell': '/bin/bash', 'user_groups': 'dba,sudo', 'create_home': True, 'comment': 'Database Administrator'}) 
+2025-11-28 09:00:23,380 p=848110 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:23,385 p=848110 u=marek n=ansible | TASK [RAPORT - Podsumowanie użytkowników] **************************************
+2025-11-28 09:00:23,409 p=848110 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    ==================================================================================
+                       RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI
+    ==================================================================================
+  
+    [SUMMARY] PODSUMOWANIE:
+       Tryb: Multi User
+       Przetworzonych użytkowników: 4
+       Status: Dry-run (--check)
+  
+    [USERS] LISTA UŻYTKOWNIKÓW:
+  
+    1. jan
+       Stan: Utworzony
+       Katalog: /home/jan
+       Shell: /bin/bash
+       Grupy: domyślna
+       (Tryb dry-run - zmiany nie zostały zastosowane)
+  
+  
+    2. piotr
+       Stan: Utworzony
+       Katalog: /home/piotr
+       Shell: /bin/bash
+       Grupy: docker,wheel
+       (Tryb dry-run - zmiany nie zostały zastosowane)
+  
+  
+    3. tomcat
+       Stan: Utworzony
+       Katalog: /opt/tomcat
+       Shell: /bin/bash
+       Grupy: webadmin
+       (Tryb dry-run - zmiany nie zostały zastosowane)
+  
+  
+    4. dbadmin
+       Stan: Utworzony
+       Katalog: /var/lib/dbadmin
+       Shell: /bin/bash
+       Grupy: dba,sudo
+       (Tryb dry-run - zmiany nie zostały zastosowane)
+  
+    ==================================================================================
+2025-11-28 09:00:23,414 p=848110 u=marek n=ansible | TASK [Wyświetl przykłady użycia] ***********************************************
+2025-11-28 09:00:23,419 p=848110 u=marek n=ansible | skipping: [localhost]
+2025-11-28 09:00:23,434 p=848110 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-11-28 09:00:23,434 p=848110 u=marek n=ansible | localhost                  : ok=11   changed=3    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   

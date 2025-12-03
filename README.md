@@ -46,12 +46,14 @@ ansible-automation-linux/
 ## 🚀 Instalacja
 
 1. Sklonuj repozytorium:
+
 ```bash
 git clone <repository-url>
 cd ansible-automation-linux
 ```
 
 2. Zainstaluj wymagane kolekcje Ansible:
+
 ```bash
 ansible-galaxy collection install -r requirements.yml
 ```
@@ -61,8 +63,9 @@ ansible-galaxy collection install -r requirements.yml
 ### 1. Wybierz odpowiedni plik inventory
 
 Dostępne środowiska:
+
 - `inventory/hosts.yml` - główny plik (domyślny)
-- `inventory/production.yml` - środowisko produkcyjne 
+- `inventory/production.yml` - środowisko produkcyjne
 - `inventory/staging.yml` - środowisko testowe
 - `inventory/development.yml` - środowisko deweloperskie
 - `inventory/localhost.yml` - testy lokalne
@@ -70,6 +73,7 @@ Dostępne środowiska:
 ### 2. Skonfiguruj inventory
 
 Edytuj odpowiedni plik inventory, np. `inventory/production.yml`:
+
 ```yaml
 all:
   children:
@@ -122,29 +126,35 @@ ansible-playbook -i inventory/hosts.yml site.yml --tags "monitoring"
 
 ## 📦 Moduły
 
-| Moduł | Opis | Status |
-|-------|------|--------|
-| **System** | | |
-| - system-update | Aktualizacja systemu i pakietów | ✅ Planned |
-| - user-management | Zarządzanie użytkownikami | ✅ Planned |
-| **User** | | |
-| - user | Tworzenie i zarządzanie użytkownikami | ✅ Ready |
-| - sudoers | Konfiguracja uprawnień sudo | ✅ Ready |
-| - disk-management | Zarządzanie dyskami | ✅ Planned |
-| **Security** | | |
-| - firewall | Konfiguracja firewall | ✅ Planned |
-| - ssh-hardening | Wzmocnienie SSH | ✅ Planned |
-| - fail2ban | Konfiguracja Fail2ban | ✅ Planned |
-| **Services** | | |
-| - web-server | Nginx/Apache | ✅ Planned |
-| - database | MySQL/PostgreSQL | ✅ Planned |
-| - docker | Docker & Docker Compose | ✅ Planned |
-| **Monitoring** | | |
-| - system-monitoring | Monitoring systemu | ✅ Planned |
-| - log-management | Zarządzanie logami | ✅ Planned |
-| **Maintenance** | | |
-| - backup | System backupów | ✅ Planned |
-| - cleanup | Czyszczenie systemu | ✅ Planned |
+| Moduł               | Opis                                              | Status     |
+| ------------------- | ------------------------------------------------- | ---------- |
+| **System**          |                                                   |            |
+| - system-update     | Aktualizacja systemu i pakietów                   | ✅ Planned |
+| - user-management   | Zarządzanie użytkownikami                         | ✅ Planned |
+| **User**            |                                                   |            |
+| - user              | Tworzenie i zarządzanie pojedynczym użytkownikiem | ✅ Ready   |
+| - users             | Zaawansowane zarządzanie wieloma użytkownikami    | ✅ Ready   |
+| - sudoers           | Konfiguracja uprawnień sudo                       | ✅ Ready   |
+| **Disk**            |                                                   |            |
+| - lvm               | Zarządzanie dyskami i wolumenami LVM              | ✅ Ready   |
+| - backup            | Archiwizacja i przywracanie danych                | ✅ Ready   |
+| **System**          |                                                   |            |
+| - install           | Instalacja pakietów systemowych                   | ✅ Ready   |
+| - raportinfra       | Raport infrastruktury serwerów                    | ✅ Ready   |
+| **Security**        |                                                   |            |
+| - firewall          | Konfiguracja firewall                             | ✅ Planned |
+| - ssh-hardening     | Wzmocnienie SSH                                   | ✅ Planned |
+| - fail2ban          | Konfiguracja Fail2ban                             | ✅ Planned |
+| **Services**        |                                                   |            |
+| - web-server        | Nginx/Apache                                      | ✅ Planned |
+| - database          | MySQL/PostgreSQL                                  | ✅ Planned |
+| - docker            | Docker & Docker Compose                           | ✅ Planned |
+| **Monitoring**      |                                                   |            |
+| - system-monitoring | Monitoring systemu                                | ✅ Planned |
+| - log-management    | Zarządzanie logami                                | ✅ Planned |
+| **Maintenance**     |                                                   |            |
+| - backup            | System backupów                                   | ✅ Planned |
+| - cleanup           | Czyszczenie systemu                               | ✅ Planned |
 
 ## 🔧 Zmienne
 
@@ -238,7 +248,7 @@ ansible-playbook -i inventory/hosts.yml playbooks/monitoring/system-monitoring.y
 
 - 👤 [USER MODULE](docs/USER-MODULE.md) - Zarządzanie użytkownikami
 - 🔐 [SUDOERS MODULE](docs/SUDOERS-MODULE.md) - Konfiguracja sudo
-- 📦 [INSTALL MODULE](docs/INSTALL-MODULE.md) - Instalacja pakietów  
+- 📦 [INSTALL MODULE](docs/INSTALL-MODULE.md) - Instalacja pakietów
 - 🗄️ [BACKUP MODULE](docs/BACKUP-MODULE.md) - Backup i archiwa
 - 💾 [LVM MODULE](docs/LVM-MODULE.md) - Zarządzanie dyskami LVM
 - 📊 [RAPORTINFRA MODULE](docs/RAPORTINFRA-MODULE.md) - Raport infrastruktury serwerów

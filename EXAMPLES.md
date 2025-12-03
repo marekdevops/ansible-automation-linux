@@ -311,6 +311,92 @@ df -h       # Punkty montowania
   -e "task_action=archive source=/var/www dest=/backup/www-$(date +%Y%m%d).tar.gz"
 ```
 
+## 👥 USERS MODULE - Zaawansowane zarządzanie użytkownikami
+
+### Podstawowe użycie (tryb pojedynczy)
+```bash
+# Utworzenie użytkownika z domyślnymi ustawieniami
+./run-automation.sh users -e "username=jan"
+
+# Użytkownik z grupami
+./run-automation.sh users -e "username=jan groups=docker,wheel"
+
+# Użytkownik z niestandardowym katalogiem
+./run-automation.sh users -e "username=tomcat home=/opt/tomcat"
+
+# Użytkownik z pełną konfiguracją
+./run-automation.sh users -e "username=dbadmin home=/var/lib/dbadmin groups=dba,sudo shell=/bin/bash"
+
+# Użytkownik systemowy
+./run-automation.sh users -e "username=nginx system=true create_home=false shell=/usr/sbin/nologin"
+
+# Usunięcie użytkownika
+./run-automation.sh users -e "username=olduser state=absent"
+```
+
+### Tryb wsadowy (z pliku YAML)
+```bash
+# Utwórz plik vars/users.yml z listą użytkowników
+cat > vars/users.yml << 'EOF'
+---
+users_list:
+  - username: jan
+    groups: docker,wheel
+    comment: "Jan Kowalski - Developer"
+  
+  - username: anna
+    groups: docker
+    comment: "Anna Nowak - Frontend Developer"
+  
+  - username: tomcat
+    home: /opt/tomcat
+    groups: webadmin
+    system: true
+    comment: "Tomcat Application User"
+EOF
+
+# Wykonaj dla wszystkich użytkowników z pliku
+./run-automation.sh users -e "@vars/users.yml"
+
+# Testuj przed wykonaniem (dry-run)
+./run-automation.sh users -e "@vars/users.yml" --check
+```
+
+### Zaawansowane scenariusze
+```bash
+# Dodaj deweloperów do zespołu
+./run-automation.sh users -i inventory/development.yml -e "@vars/developers.yml"
+
+# Skonfiguruj użytkowników aplikacji na produkcji
+./run-automation.sh users -i inventory/production.yml -e "@vars/app_users.yml"
+
+# Reorganizacja użytkownika (nowy katalog + grupy)
+./run-automation.sh users -e "username=jan home=/home/users/jan groups=docker,k8s,developers"
+
+# Czyszczenie starych użytkowników
+cat > vars/cleanup.yml << 'EOF'
+---
+users_list:
+  - username: olddev1
+    state: absent
+  - username: olddev2
+    state: absent
+EOF
+./run-automation.sh users -e "@vars/cleanup.yml"
+```
+
+### Integracja z innymi modułami
+```bash
+# 1. Utwórz użytkownika aplikacji
+./run-automation.sh users -e "username=tomcat home=/opt/tomcat groups=webadmin"
+
+# 2. Skonfiguruj sudo dla użytkownika
+./run-automation.sh sudoers -e "user=tomcat"
+
+# 3. Utwórz LVM dla katalogu aplikacji
+./run-automation.sh lvm -e "task_action=create disk=/dev/sdb size=100G name=/opt/tomcat"
+```
+
 ## 📊 RAPORTINFRA MODULE - Raport infrastruktury serwerów
 
 ### Podstawowe użycie
