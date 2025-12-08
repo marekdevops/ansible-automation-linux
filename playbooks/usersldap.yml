@@ -159,41 +159,14 @@
       register: override_deleted
       tags: usersldap
 
-    - name: "Buduj komendę sss_override user-add"
-      set_fact:
-        override_commands: >-
-          {% set cmds = [] %}
-          {% for user in processed_users %}
-          {%   set cmd_parts = ['sss_override', 'user-add', user.username] %}
-          {%   if user.home is defined and user.home != '' %}
-          {%     set _ = cmd_parts.append('--home=' + user.home) %}
-          {%   endif %}
-          {%   if user.shell is defined and user.shell != '' %}
-          {%     set _ = cmd_parts.append('--shell=' + user.shell) %}
-          {%   endif %}
-          {%   if user.uid is defined and user.uid != '' %}
-          {%     set _ = cmd_parts.append('--uid=' + (user.uid | string)) %}
-          {%   endif %}
-          {%   if user.gid is defined and user.gid != '' %}
-          {%     set _ = cmd_parts.append('--gid=' + (user.gid | string)) %}
-          {%   endif %}
-          {%   set _ = cmds.append({'username': user.username, 'command': cmd_parts | join(' ')}) %}
-          {% endfor %}
-          {{ cmds }}
-      tags: usersldap
-
-    - name: "Wyświetl komendy do wykonania"
-      debug:
-        msg: |
-          === KOMENDY SSS_OVERRIDE ===
-          {% for cmd in override_commands %}
-          {{ loop.index }}. {{ cmd.command }}
-          {% endfor %}
-      tags: usersldap
-
-    - name: "Zastosuj nadpisania dla użytkowników LDAP/AD"
-      command: "{{ item.command }}"
-      loop: "{{ override_commands }}"
+    - name: "Zastosuj nadpisania dla użytkowników LDAP/AD (sss_override user-add)"
+      shell: |
+        sss_override user-add {{ item.username }} \
+        {{ ('--home=' + item.home) if (item.home is defined and item.home != '') else '' }} \
+        {{ ('--shell=' + item.shell) if (item.shell is defined and item.shell != '') else '' }} \
+        {{ ('--uid=' + (item.uid | string)) if (item.uid is defined and item.uid != '') else '' }} \
+        {{ ('--gid=' + (item.gid | string)) if (item.gid is defined and item.gid != '') else '' }}
+      loop: "{{ processed_users }}"
       loop_control:
         label: "{{ item.username }}"
       register: override_applied

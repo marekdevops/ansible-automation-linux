@@ -5037,3 +5037,345 @@ real play
 2025-12-03 13:07:43,964 p=1281662 u=marek n=ansible | [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
 2025-12-03 13:07:44,061 p=1281662 u=marek n=ansible | playbook: playbooks/usersldap.yml
+2025-12-03 13:24:37,668 p=1290463 u=marek n=ansible | [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does
+not match 'all'
+
+2025-12-03 13:24:37,743 p=1290463 u=marek n=ansible | playbook: playbooks/usersldap.yml
+2025-12-03 13:24:50,570 p=1290589 u=marek n=ansible | playbook: playbooks/usersldap.yml
+2025-12-03 13:24:57,965 p=1290690 u=marek n=ansible | PLAY [USERSLDAP MODULE - Zarządzanie użytkownikami LDAP/AD (sss_override)] *****
+2025-12-03 13:24:57,971 p=1290690 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-12-03 13:24:59,747 p=1290690 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:24:59,753 p=1290690 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-12-03 13:24:59,779 p=1290690 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:24:59,785 p=1290690 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-12-03 13:24:59,793 p=1290690 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:24:59,799 p=1290690 u=marek n=ansible | TASK [Sprawdź czy sssd-tools jest zainstalowany] *******************************
+2025-12-03 13:25:02,668 p=1290690 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:25:02,693 p=1290690 u=marek n=ansible | TASK [Zainstaluj sssd-tools jeśli nie jest zainstalowany] **********************
+2025-12-03 13:25:03,716 p=1290690 u=marek n=ansible | changed: [localhost]
+2025-12-03 13:25:03,743 p=1290690 u=marek n=ansible | TASK [Wyświetl informacje o instalacji sssd-tools] *****************************
+2025-12-03 13:25:03,756 p=1290690 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === SSSD-TOOLS ===
+    Status: Zainstalowano sssd-tools
+2025-12-03 13:25:03,782 p=1290690 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-12-03 13:25:03,803 p=1290690 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERSLDAP - ZARZĄDZANIE UŻYTKOWNIKAMI LDAP/AD ===
+    Tryb: Single User
+    Narzędzie: sss_override (SSSD)
+    Użytkownik: test.user
+    Nowy katalog domowy: /home/test
+    Shell: nie zmieniane
+    UID: nie zmieniane
+    GID: nie zmieniane
+2025-12-03 13:25:03,891 p=1290690 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-12-03 13:25:03,911 p=1290690 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:25:03,940 p=1290690 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-12-03 13:25:03,948 p=1290690 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:25:03,974 p=1290690 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-12-03 13:25:03,998 p=1290690 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY LDAP/AD DO PRZETWORZENIA ===
+    1. test.user
+       - Katalog domowy: /home/test
+       - Shell:
+       - UID:
+       - GID:
+2025-12-03 13:25:04,046 p=1290690 u=marek n=ansible | TASK [Sprawdź istniejące nadpisania (sss_override user-show)] ******************
+2025-12-03 13:25:04,204 p=1290690 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:25:04,205 p=1290690 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:25:04,232 p=1290690 u=marek n=ansible | TASK [Wyświetl istniejące nadpisania] ******************************************
+2025-12-03 13:25:04,243 p=1290690 u=marek n=ansible | ok: [localhost] => (item=test.user) => 
+  msg: |-
+    Użytkownik: test.user
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:25:04,271 p=1290690 u=marek n=ansible | TASK [Usuń istniejące nadpisania (jeśli istnieją)] *****************************
+2025-12-03 13:25:04,379 p=1290690 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:25:04,380 p=1290690 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:25:04,407 p=1290690 u=marek n=ansible | TASK [Buduj komendę sss_override user-add] *************************************
+2025-12-03 13:25:04,431 p=1290690 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:25:04,459 p=1290690 u=marek n=ansible | TASK [Wyświetl komendy do wykonania] *******************************************
+2025-12-03 13:25:04,468 p=1290690 u=marek n=ansible | fatal: [localhost]: FAILED! => 
+  msg: |-
+    The task includes an option with an undefined variable. The error was: 'str object' has no attribute 'command'. 'str object' has no attribute 'command'
+  
+    The error appears to be in '/home/marek/CODE/ansible-automation-linux/playbooks/usersldap.yml': line 185, column 7, but may
+    be elsewhere in the file depending on the exact syntax problem.
+  
+    The offending line appears to be:
+  
+  
+        - name: "Wyświetl komendy do wykonania"
+          ^ here
+2025-12-03 13:25:04,469 p=1290690 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-12-03 13:25:04,469 p=1290690 u=marek n=ansible | localhost                  : ok=10   changed=1    unreachable=0    failed=1    skipped=4    rescued=0    ignored=0   
+2025-12-03 13:26:10,516 p=1291640 u=marek n=ansible | [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does
+not match 'all'
+
+2025-12-03 13:26:10,582 p=1291640 u=marek n=ansible | playbook: playbooks/usersldap.yml
+2025-12-03 13:26:29,736 p=1291836 u=marek n=ansible | PLAY [USERSLDAP MODULE - Zarządzanie użytkownikami LDAP/AD (sss_override)] *****
+2025-12-03 13:26:29,740 p=1291836 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-12-03 13:26:30,469 p=1291836 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:30,473 p=1291836 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-12-03 13:26:30,492 p=1291836 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:30,497 p=1291836 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-12-03 13:26:30,504 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:30,510 p=1291836 u=marek n=ansible | TASK [Sprawdź czy sssd-tools jest zainstalowany] *******************************
+2025-12-03 13:26:33,381 p=1291836 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:33,404 p=1291836 u=marek n=ansible | TASK [Zainstaluj sssd-tools jeśli nie jest zainstalowany] **********************
+2025-12-03 13:26:34,309 p=1291836 u=marek n=ansible | changed: [localhost]
+2025-12-03 13:26:34,335 p=1291836 u=marek n=ansible | TASK [Wyświetl informacje o instalacji sssd-tools] *****************************
+2025-12-03 13:26:34,347 p=1291836 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === SSSD-TOOLS ===
+    Status: Zainstalowano sssd-tools
+2025-12-03 13:26:34,373 p=1291836 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-12-03 13:26:34,394 p=1291836 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERSLDAP - ZARZĄDZANIE UŻYTKOWNIKAMI LDAP/AD ===
+    Tryb: Single User
+    Narzędzie: sss_override (SSSD)
+    Użytkownik: test.user
+    Nowy katalog domowy: /home/test
+    Shell: /bin/bash
+    UID: nie zmieniane
+    GID: nie zmieniane
+2025-12-03 13:26:34,482 p=1291836 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-12-03 13:26:34,503 p=1291836 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:34,530 p=1291836 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-12-03 13:26:34,537 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:34,563 p=1291836 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-12-03 13:26:34,583 p=1291836 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY LDAP/AD DO PRZETWORZENIA ===
+    1. test.user
+       - Katalog domowy: /home/test
+       - Shell: /bin/bash
+       - UID:
+       - GID:
+2025-12-03 13:26:34,630 p=1291836 u=marek n=ansible | TASK [Sprawdź istniejące nadpisania (sss_override user-show)] ******************
+2025-12-03 13:26:34,782 p=1291836 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:26:34,783 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:34,810 p=1291836 u=marek n=ansible | TASK [Wyświetl istniejące nadpisania] ******************************************
+2025-12-03 13:26:34,821 p=1291836 u=marek n=ansible | ok: [localhost] => (item=test.user) => 
+  msg: |-
+    Użytkownik: test.user
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:26:34,850 p=1291836 u=marek n=ansible | TASK [Usuń istniejące nadpisania (jeśli istnieją)] *****************************
+2025-12-03 13:26:34,957 p=1291836 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:26:34,958 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:34,984 p=1291836 u=marek n=ansible | TASK [Zastosuj nadpisania dla użytkowników LDAP/AD (sss_override user-add)] ****
+2025-12-03 13:26:35,105 p=1291836 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:26:35,106 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:35,132 p=1291836 u=marek n=ansible | TASK [Utworz katalogi domowe jeśli nie istnieją] *******************************
+2025-12-03 13:26:35,326 p=1291836 u=marek n=ansible | changed: [localhost] => (item=test.user)
+2025-12-03 13:26:35,328 p=1291836 u=marek n=ansible | [WARNING]: failed to look up user test.user. Create user up to this point in
+real play
+
+2025-12-03 13:26:35,375 p=1291836 u=marek n=ansible | TASK [Restartuj usługę SSSD] ***************************************************
+2025-12-03 13:26:35,659 p=1291836 u=marek n=ansible | changed: [localhost]
+2025-12-03 13:26:35,687 p=1291836 u=marek n=ansible | TASK [Poczekaj na restart SSSD (3 sekundy)] ************************************
+2025-12-03 13:26:35,695 p=1291836 u=marek n=ansible | Pausing for 3 seconds
+2025-12-03 13:26:38,697 p=1291836 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:38,729 p=1291836 u=marek n=ansible | TASK [Weryfikuj nadpisania (sss_override user-show)] ***************************
+2025-12-03 13:26:38,858 p=1291836 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:26:38,859 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:38,892 p=1291836 u=marek n=ansible | TASK [Sprawdź użytkownika w systemie (getent)] *********************************
+2025-12-03 13:26:39,025 p=1291836 u=marek n=ansible | skipping: [localhost] => (item=test.user) 
+2025-12-03 13:26:39,026 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:39,089 p=1291836 u=marek n=ansible | TASK [RAPORT - Podsumowanie nadpisań LDAP/AD] **********************************
+2025-12-03 13:26:39,115 p=1291836 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    ==================================================================================
+                  RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI LDAP/AD (SSS_OVERRIDE)
+    ==================================================================================
+  
+    [SUMMARY] PODSUMOWANIE:
+       Tryb: Single User
+       Przetworzonych użytkowników: 1
+       SSSD Tools: Zainstalowano
+       SSSD: Zrestartowano
+       Status: Dry-run (--check)
+  
+    [USERS] LISTA UŻYTKOWNIKÓW Z NADPISANIAMI:
+  
+    1. test.user
+       Status: Nadpisanie aktywne
+       Getent: OK - użytkownik widoczny
+       (Tryb dry-run - nadpisania nie zostały zastosowane)
+  
+    ==================================================================================
+2025-12-03 13:26:39,148 p=1291836 u=marek n=ansible | TASK [Wyświetl dodatkowe informacje] *******************************************
+2025-12-03 13:26:39,157 p=1291836 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:39,300 p=1291836 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-12-03 13:26:39,300 p=1291836 u=marek n=ansible | localhost                  : ok=13   changed=3    unreachable=0    failed=0    skipped=8    rescued=0    ignored=0   
+2025-12-03 13:26:55,040 p=1293089 u=marek n=ansible | PLAY [USERSLDAP MODULE - Zarządzanie użytkownikami LDAP/AD (sss_override)] *****
+2025-12-03 13:26:55,044 p=1293089 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2025-12-03 13:26:55,769 p=1293089 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:55,774 p=1293089 u=marek n=ansible | TASK [Sprawdź tryb działania modułu] *******************************************
+2025-12-03 13:26:55,792 p=1293089 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:55,798 p=1293089 u=marek n=ansible | TASK [Walidacja - wymagana nazwa użytkownika lub lista] ************************
+2025-12-03 13:26:55,806 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:55,811 p=1293089 u=marek n=ansible | TASK [Sprawdź czy sssd-tools jest zainstalowany] *******************************
+2025-12-03 13:26:58,698 p=1293089 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:58,722 p=1293089 u=marek n=ansible | TASK [Zainstaluj sssd-tools jeśli nie jest zainstalowany] **********************
+2025-12-03 13:26:59,626 p=1293089 u=marek n=ansible | changed: [localhost]
+2025-12-03 13:26:59,652 p=1293089 u=marek n=ansible | TASK [Wyświetl informacje o instalacji sssd-tools] *****************************
+2025-12-03 13:26:59,664 p=1293089 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === SSSD-TOOLS ===
+    Status: Zainstalowano sssd-tools
+2025-12-03 13:26:59,690 p=1293089 u=marek n=ansible | TASK [Wyświetl informacje o trybie] ********************************************
+2025-12-03 13:26:59,711 p=1293089 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === MODUŁ USERSLDAP - ZARZĄDZANIE UŻYTKOWNIKAMI LDAP/AD ===
+    Tryb: Multi User (4 użytkowników)
+    Narzędzie: sss_override (SSSD)
+2025-12-03 13:26:59,797 p=1293089 u=marek n=ansible | TASK [Przygotuj dane dla pojedynczego użytkownika] *****************************
+2025-12-03 13:26:59,804 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:26:59,830 p=1293089 u=marek n=ansible | TASK [Przygotuj dane dla wielu użytkowników] ***********************************
+2025-12-03 13:26:59,849 p=1293089 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:26:59,875 p=1293089 u=marek n=ansible | TASK [Wyświetl listę użytkowników do przetworzenia] ****************************
+2025-12-03 13:26:59,895 p=1293089 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    === UŻYTKOWNICY LDAP/AD DO PRZETWORZENIA ===
+    1. jan.kowalski
+       - Katalog domowy: /home/jan
+       - Shell: nie zmieniane
+       - UID: nie zmieniane
+       - GID: nie zmieniane
+    2. anna.nowak
+       - Katalog domowy: /home/anna
+       - Shell: /bin/bash
+       - UID: nie zmieniane
+       - GID: nie zmieniane
+    3. piotr.wisniewski
+       - Katalog domowy: /home/piotr
+       - Shell: /bin/bash
+       - UID: 10001
+       - GID: 10001
+    4. tomcat.service
+       - Katalog domowy: /opt/tomcat
+       - Shell: /bin/bash
+       - UID: 999
+       - GID: 999
+2025-12-03 13:26:59,940 p=1293089 u=marek n=ansible | TASK [Sprawdź istniejące nadpisania (sss_override user-show)] ******************
+2025-12-03 13:27:00,093 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=jan.kowalski) 
+2025-12-03 13:27:00,188 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=anna.nowak) 
+2025-12-03 13:27:00,283 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=piotr.wisniewski) 
+2025-12-03 13:27:00,378 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=tomcat.service) 
+2025-12-03 13:27:00,378 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:00,405 p=1293089 u=marek n=ansible | TASK [Wyświetl istniejące nadpisania] ******************************************
+2025-12-03 13:27:00,416 p=1293089 u=marek n=ansible | ok: [localhost] => (item=jan.kowalski) => 
+  msg: |-
+    Użytkownik: jan.kowalski
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:27:00,418 p=1293089 u=marek n=ansible | ok: [localhost] => (item=anna.nowak) => 
+  msg: |-
+    Użytkownik: anna.nowak
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:27:00,419 p=1293089 u=marek n=ansible | ok: [localhost] => (item=piotr.wisniewski) => 
+  msg: |-
+    Użytkownik: piotr.wisniewski
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:27:00,421 p=1293089 u=marek n=ansible | ok: [localhost] => (item=tomcat.service) => 
+  msg: |-
+    Użytkownik: tomcat.service
+    Status: Ma nadpisanie
+    Aktualne wartości:
+2025-12-03 13:27:00,448 p=1293089 u=marek n=ansible | TASK [Usuń istniejące nadpisania (jeśli istnieją)] *****************************
+2025-12-03 13:27:00,554 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=jan.kowalski) 
+2025-12-03 13:27:00,650 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=anna.nowak) 
+2025-12-03 13:27:00,746 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=piotr.wisniewski) 
+2025-12-03 13:27:00,843 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=tomcat.service) 
+2025-12-03 13:27:00,844 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:00,874 p=1293089 u=marek n=ansible | TASK [Zastosuj nadpisania dla użytkowników LDAP/AD (sss_override user-add)] ****
+2025-12-03 13:27:00,994 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=jan.kowalski) 
+2025-12-03 13:27:01,092 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=anna.nowak) 
+2025-12-03 13:27:01,190 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=piotr.wisniewski) 
+2025-12-03 13:27:01,290 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=tomcat.service) 
+2025-12-03 13:27:01,291 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:01,318 p=1293089 u=marek n=ansible | TASK [Utworz katalogi domowe jeśli nie istnieją] *******************************
+2025-12-03 13:27:01,512 p=1293089 u=marek n=ansible | changed: [localhost] => (item=jan.kowalski)
+2025-12-03 13:27:01,613 p=1293089 u=marek n=ansible | changed: [localhost] => (item=anna.nowak)
+2025-12-03 13:27:01,712 p=1293089 u=marek n=ansible | changed: [localhost] => (item=piotr.wisniewski)
+2025-12-03 13:27:01,812 p=1293089 u=marek n=ansible | changed: [localhost] => (item=tomcat.service)
+2025-12-03 13:27:01,813 p=1293089 u=marek n=ansible | [WARNING]: failed to look up user jan.kowalski. Create user up to this point in
+real play
+
+2025-12-03 13:27:01,813 p=1293089 u=marek n=ansible | [WARNING]: failed to look up user anna.nowak. Create user up to this point in
+real play
+
+2025-12-03 13:27:01,813 p=1293089 u=marek n=ansible | [WARNING]: failed to look up user piotr.wisniewski. Create user up to this
+point in real play
+
+2025-12-03 13:27:01,813 p=1293089 u=marek n=ansible | [WARNING]: failed to look up user tomcat.service. Create user up to this point
+in real play
+
+2025-12-03 13:27:01,860 p=1293089 u=marek n=ansible | TASK [Restartuj usługę SSSD] ***************************************************
+2025-12-03 13:27:02,140 p=1293089 u=marek n=ansible | changed: [localhost]
+2025-12-03 13:27:02,167 p=1293089 u=marek n=ansible | TASK [Poczekaj na restart SSSD (3 sekundy)] ************************************
+2025-12-03 13:27:02,175 p=1293089 u=marek n=ansible | Pausing for 3 seconds
+2025-12-03 13:27:05,177 p=1293089 u=marek n=ansible | ok: [localhost]
+2025-12-03 13:27:05,209 p=1293089 u=marek n=ansible | TASK [Weryfikuj nadpisania (sss_override user-show)] ***************************
+2025-12-03 13:27:05,339 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=jan.kowalski) 
+2025-12-03 13:27:05,455 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=anna.nowak) 
+2025-12-03 13:27:05,570 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=piotr.wisniewski) 
+2025-12-03 13:27:05,685 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=tomcat.service) 
+2025-12-03 13:27:05,686 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:05,718 p=1293089 u=marek n=ansible | TASK [Sprawdź użytkownika w systemie (getent)] *********************************
+2025-12-03 13:27:05,840 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=jan.kowalski) 
+2025-12-03 13:27:05,936 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=anna.nowak) 
+2025-12-03 13:27:06,032 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=piotr.wisniewski) 
+2025-12-03 13:27:06,131 p=1293089 u=marek n=ansible | skipping: [localhost] => (item=tomcat.service) 
+2025-12-03 13:27:06,132 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:06,181 p=1293089 u=marek n=ansible | TASK [RAPORT - Podsumowanie nadpisań LDAP/AD] **********************************
+2025-12-03 13:27:06,203 p=1293089 u=marek n=ansible | ok: [localhost] => 
+  msg: |-
+    ==================================================================================
+                  RAPORT ZARZĄDZANIA UŻYTKOWNIKAMI LDAP/AD (SSS_OVERRIDE)
+    ==================================================================================
+  
+    [SUMMARY] PODSUMOWANIE:
+       Tryb: Multi User
+       Przetworzonych użytkowników: 4
+       SSSD Tools: Zainstalowano
+       SSSD: Zrestartowano
+       Status: Dry-run (--check)
+  
+    [USERS] LISTA UŻYTKOWNIKÓW Z NADPISANIAMI:
+  
+    1. jan.kowalski
+       Status: Nadpisanie aktywne
+       Getent: OK - użytkownik widoczny
+       (Tryb dry-run - nadpisania nie zostały zastosowane)
+  
+  
+    2. anna.nowak
+       Status: Nadpisanie aktywne
+       Getent: OK - użytkownik widoczny
+       (Tryb dry-run - nadpisania nie zostały zastosowane)
+  
+  
+    3. piotr.wisniewski
+       Status: Nadpisanie aktywne
+       Getent: OK - użytkownik widoczny
+       (Tryb dry-run - nadpisania nie zostały zastosowane)
+  
+  
+    4. tomcat.service
+       Status: Nadpisanie aktywne
+       Getent: OK - użytkownik widoczny
+       (Tryb dry-run - nadpisania nie zostały zastosowane)
+  
+    ==================================================================================
+2025-12-03 13:27:06,230 p=1293089 u=marek n=ansible | TASK [Wyświetl dodatkowe informacje] *******************************************
+2025-12-03 13:27:06,238 p=1293089 u=marek n=ansible | skipping: [localhost]
+2025-12-03 13:27:06,352 p=1293089 u=marek n=ansible | PLAY RECAP *********************************************************************
+2025-12-03 13:27:06,352 p=1293089 u=marek n=ansible | localhost                  : ok=13   changed=3    unreachable=0    failed=0    skipped=8    rescued=0    ignored=0   
