@@ -5379,3 +5379,709 @@ in real play
 2025-12-03 13:27:06,238 p=1293089 u=marek n=ansible | skipping: [localhost]
 2025-12-03 13:27:06,352 p=1293089 u=marek n=ansible | PLAY RECAP *********************************************************************
 2025-12-03 13:27:06,352 p=1293089 u=marek n=ansible | localhost                  : ok=13   changed=3    unreachable=0    failed=0    skipped=8    rescued=0    ignored=0   
+2026-01-21 00:28:56,312 p=62966 u=marek n=ansible | [WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+2026-01-21 00:28:56,312 p=62966 u=marek n=ansible | [WARNING]: Could not match supplied host pattern, ignoring: 192.168.1.49
+
+2026-01-21 00:28:56,449 p=62966 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 00:28:56,449 p=62966 u=marek n=ansible | skipping: no hosts matched
+2026-01-21 00:28:56,449 p=62966 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 00:29:32,714 p=63046 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 00:29:32,721 p=63046 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 00:29:33,119 p=63046 u=marek n=ansible | fatal: [test-server]: FAILED! => changed=false 
+  ansible_facts: {}
+  failed_modules:
+    ansible.legacy.setup:
+      ansible_facts:
+        discovered_interpreter_python: /usr/bin/python3
+      failed: true
+      module_stderr: |-
+        sudo: wymagane jest hasło
+      module_stdout: ''
+      msg: |-
+        MODULE FAILURE
+        See stdout/stderr for the exact error
+      rc: 1
+  msg: |-
+    The following modules failed to execute: ansible.legacy.setup
+2026-01-21 00:29:33,119 p=63046 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 00:29:33,119 p=63046 u=marek n=ansible | test-server                : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+2026-01-21 00:32:19,381 p=63198 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 00:32:19,385 p=63198 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 00:32:20,370 p=63198 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:20,373 p=63198 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika] ************************************
+2026-01-21 00:32:20,397 p=63198 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:32:20,399 p=63198 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-01-21 00:32:20,622 p=63198 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:20,626 p=63198 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-01-21 00:32:20,648 p=63198 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Użytkownik: marek
+    Plik sudoers: /etc/sudoers.d/98-marek
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 00:32:20,654 p=63198 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-01-21 00:32:20,876 p=63198 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:20,878 p=63198 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-01-21 00:32:20,980 p=63198 u=marek n=ansible | fatal: [test-server -> localhost]: FAILED! => changed=false 
+  module_stderr: |-
+    sudo: wymagane jest hasło
+  module_stdout: ''
+  msg: |-
+    MODULE FAILURE
+    See stdout/stderr for the exact error
+  rc: 1
+2026-01-21 00:32:20,981 p=63198 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 00:32:20,981 p=63198 u=marek n=ansible | test-server                : ok=4    changed=0    unreachable=0    failed=1    skipped=1    rescued=0    ignored=0   
+2026-01-21 00:32:40,606 p=63283 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 00:32:40,610 p=63283 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 00:32:41,408 p=63283 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:41,410 p=63283 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika] ************************************
+2026-01-21 00:32:41,431 p=63283 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:32:41,434 p=63283 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-01-21 00:32:41,651 p=63283 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:41,654 p=63283 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-01-21 00:32:41,678 p=63283 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Użytkownik: marek
+    Plik sudoers: /etc/sudoers.d/98-marek
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 00:32:41,684 p=63283 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-01-21 00:32:41,909 p=63283 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:32:41,912 p=63283 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-01-21 00:32:42,010 p=63283 u=marek n=ansible | fatal: [test-server -> localhost]: FAILED! => changed=false 
+  module_stderr: |-
+    sudo: do odczytu hasła wymagany jest terminal; należy użyć opcji -S, aby czytać ze standardowego wejścia, lub skonfigurować program pytający o hasło
+    sudo: wymagane jest hasło
+  module_stdout: ''
+  msg: |-
+    MODULE FAILURE
+    See stdout/stderr for the exact error
+  rc: 1
+2026-01-21 00:32:42,010 p=63283 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 00:32:42,011 p=63283 u=marek n=ansible | test-server                : ok=4    changed=0    unreachable=0    failed=1    skipped=1    rescued=0    ignored=0   
+2026-01-21 00:33:06,271 p=63377 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 00:33:06,275 p=63377 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 00:33:07,065 p=63377 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:33:07,067 p=63377 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika] ************************************
+2026-01-21 00:33:07,087 p=63377 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:33:07,090 p=63377 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-01-21 00:33:07,307 p=63377 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:33:07,309 p=63377 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-01-21 00:33:07,334 p=63377 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Użytkownik: marek
+    Plik sudoers: /etc/sudoers.d/98-marek
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 00:33:07,339 p=63377 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-01-21 00:33:07,566 p=63377 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:33:07,570 p=63377 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-01-21 00:33:07,593 p=63377 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:33:07,596 p=63377 u=marek n=ansible | TASK [Wyświetl komendy do skonfigurowania] *************************************
+2026-01-21 00:33:07,620 p=63377 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KOMENDY SUDO DLA MAREK ===
+    - /usr/bin/systemctl restart nginx
+    - /usr/bin/systemctl reload nginx
+    - /usr/bin/systemctl status nginx
+    - /usr/bin/systemctl restart apache2
+    - /usr/bin/systemctl reload apache2
+    - /bin/chmod +x /opt/scripts/*
+    - /usr/bin/docker ps
+    - /usr/bin/docker images
+    - /usr/bin/docker logs *
+    - /usr/sbin/service * restart
+    - /usr/sbin/service * stop
+    - /usr/sbin/service * start
+    - /usr/bin/tail -f /var/log/*.log
+    - /usr/bin/less /var/log/*.log
+    - /usr/bin/rsync * *
+    - /usr/bin/scp * *
+    - /bin/mount
+    - /bin/umount
+    - /usr/bin/tar czf * *
+    - /usr/bin/tar xzf * *
+2026-01-21 00:33:07,624 p=63377 u=marek n=ansible | TASK [Utwórz backup istniejącego pliku sudoers (jeśli istnieje)] ***************
+2026-01-21 00:33:07,632 p=63377 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:33:07,635 p=63377 u=marek n=ansible | TASK [Wygeneruj plik sudoers dla użytkownika] **********************************
+2026-01-21 00:33:08,101 p=63377 u=marek n=ansible | --- before
++++ after: /home/marek/.ansible/tmp/ansible-local-63377wt7_0pu7/tmp0i9isr8x/sudoers_user.j2
+@@ -0,0 +1,27 @@
++# Sudoers file for user: marek
++# Generated by Ansible on 2026-01-20T23:33:06Z
++# 
++# This file allows marek to execute specific commands without password
++#
++
++# User privilege specification
++marek ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
++marek ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
++marek ALL=(ALL) NOPASSWD: /usr/bin/systemctl status nginx
++marek ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart apache2
++marek ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload apache2
++marek ALL=(ALL) NOPASSWD: /bin/chmod +x /opt/scripts/*
++marek ALL=(ALL) NOPASSWD: /usr/bin/docker ps
++marek ALL=(ALL) NOPASSWD: /usr/bin/docker images
++marek ALL=(ALL) NOPASSWD: /usr/bin/docker logs *
++marek ALL=(ALL) NOPASSWD: /usr/sbin/service * restart
++marek ALL=(ALL) NOPASSWD: /usr/sbin/service * stop
++marek ALL=(ALL) NOPASSWD: /usr/sbin/service * start
++marek ALL=(ALL) NOPASSWD: /usr/bin/tail -f /var/log/*.log
++marek ALL=(ALL) NOPASSWD: /usr/bin/less /var/log/*.log
++marek ALL=(ALL) NOPASSWD: /usr/bin/rsync * *
++marek ALL=(ALL) NOPASSWD: /usr/bin/scp * *
++marek ALL=(ALL) NOPASSWD: /bin/mount
++marek ALL=(ALL) NOPASSWD: /bin/umount
++marek ALL=(ALL) NOPASSWD: /usr/bin/tar czf * *
++marek ALL=(ALL) NOPASSWD: /usr/bin/tar xzf * *
+
+
+2026-01-21 00:33:08,101 p=63377 u=marek n=ansible | changed: [test-server]
+2026-01-21 00:33:08,104 p=63377 u=marek n=ansible | TASK [Sprawdź składnię wszystkich plików sudoers] ******************************
+2026-01-21 00:33:08,112 p=63377 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:33:08,115 p=63377 u=marek n=ansible | TASK [Wyświetl zawartość utworzonego pliku] ************************************
+2026-01-21 00:33:08,123 p=63377 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:33:08,126 p=63377 u=marek n=ansible | TASK [Pokaż zawartość pliku sudoers] *******************************************
+2026-01-21 00:33:08,151 p=63377 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === ZAWARTOŚĆ PLIKU /etc/sudoers.d/98-marek ===
+    Dry-run - plik nie został utworzony
+2026-01-21 00:33:08,154 p=63377 u=marek n=ansible | TASK [Test uprawnień sudo dla użytkownika] *************************************
+2026-01-21 00:33:08,372 p=63377 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:33:08,375 p=63377 u=marek n=ansible | TASK [Wyświetl podsumowanie] ***************************************************
+2026-01-21 00:33:08,404 p=63377 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+    Użytkownik: marek
+    Plik sudoers: /etc/sudoers.d/98-marek
+    Status: Dry-run - zmiany nie zostały zastosowane
+    Walidacja: Pominięta
+  
+    === SPRAWDZENIE UPRAWNIEŃ ===
+  
+  
+    === TESTOWANIE ===
+    Aby przetestować uprawnienia, zaloguj się jako marek:
+    sudo su - marek
+  
+    Następnie sprawdź dostępne komendy:
+    sudo -l
+  
+    === ZARZĄDZANIE ===
+    Plik konfiguracyjny: /etc/sudoers.d/98-marek
+    Edytuj szablon komend: /home/marek/CODE/ansible-automation-linux/playbooks/../templates/sudo_commands
+    Usuń uprawnienia: sudo rm /etc/sudoers.d/98-marek
+2026-01-21 00:33:08,412 p=63377 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 00:33:08,412 p=63377 u=marek n=ansible | test-server                : ok=9    changed=1    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+2026-01-21 00:34:45,962 p=63593 u=marek n=ansible | PLAY [USER MODULE - Zarządzanie użytkownikami] **************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:45,967 p=63593 u=marek n=ansible | TASK [Gathering Facts] **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:46,910 p=63593 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:34:46,912 p=63593 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika] *****************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:46,933 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:46,937 p=63593 u=marek n=ansible | TASK [Wyświetl informacje o tworzeniu użytkownika] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:46,966 p=63593 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === TWORZENIE UŻYTKOWNIKA ===
+    Użytkownik: jan
+    Katalog domowy: /home/jan
+    Shell: /bin/bash
+    Grupy: brak dodatkowych
+    Sudo: Nie
+2026-01-21 00:34:46,974 p=63593 u=marek n=ansible | TASK [Sprawdź czy użytkownik już istnieje] ******************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,205 p=63593 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:34:47,208 p=63593 u=marek n=ansible | TASK [Informacja o istniejącym użytkowniku] *****************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,220 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:47,224 p=63593 u=marek n=ansible | TASK [Utwórz katalog domowy (jeśli niestandardowy)] *********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,246 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:47,250 p=63593 u=marek n=ansible | TASK [Utwórz użytkownika] ***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,675 p=63593 u=marek n=ansible | changed: [test-server]
+2026-01-21 00:34:47,677 p=63593 u=marek n=ansible | TASK [Ustaw właściciela katalogu domowego] ******************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,928 p=63593 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:34:47,930 p=63593 u=marek n=ansible | TASK [Dodaj użytkownika do sudoers (jeśli włączone)] ********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,955 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:47,958 p=63593 u=marek n=ansible | TASK [Utwórz katalog .ssh] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:47,980 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:47,983 p=63593 u=marek n=ansible | TASK [Dodaj klucz SSH] **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,009 p=63593 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:34:48,012 p=63593 u=marek n=ansible | TASK [Sprawdź utworzonego użytkownika] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,186 p=63593 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:34:48,189 p=63593 u=marek n=ansible | TASK [Wyświetl informacje o użytkowniku] ********************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,223 p=63593 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === UŻYTKOWNIK UTWORZONY ===
+    Login: jan
+    UID: 1001
+    GID: 1001
+    Katalog: /home/jan
+    Shell: /bin/bash
+    Status: Nowy
+2026-01-21 00:34:48,225 p=63593 u=marek n=ansible | TASK [Sprawdź dostęp sudo] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,457 p=63593 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:34:48,460 p=63593 u=marek n=ansible | TASK [Wyświetl podsumowanie] ********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,489 p=63593 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE ===
+    Użytkownik jan został utworzony
+    Katalog domowy: /home/jan
+    Dostęp sudo: Nie
+  
+    Aby zalogować się jako jan:
+    sudo su - jan
+2026-01-21 00:34:48,497 p=63593 u=marek n=ansible | PLAY RECAP **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:34:48,497 p=63593 u=marek n=ansible | test-server                : ok=9    changed=1    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+2026-01-21 00:35:09,672 p=63723 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] *********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:09,676 p=63723 u=marek n=ansible | TASK [Gathering Facts] **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:10,472 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:10,474 p=63723 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika] *****************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:10,495 p=63723 u=marek n=ansible | skipping: [test-server]
+2026-01-21 00:35:10,498 p=63723 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ***********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:10,746 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:10,749 p=63723 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ***********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:10,778 p=63723 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Użytkownik: jan
+    Plik sudoers: /etc/sudoers.d/98-jan
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 00:35:10,785 p=63723 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] ***************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:11,016 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:11,019 p=63723 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] *********************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:11,047 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:11,050 p=63723 u=marek n=ansible | TASK [Wyświetl komendy do skonfigurowania] ******************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:11,079 p=63723 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KOMENDY SUDO DLA JAN ===
+    - /usr/bin/systemctl restart nginx
+    - /usr/bin/systemctl reload nginx
+    - /usr/bin/systemctl status nginx
+    - /usr/bin/systemctl restart apache2
+    - /usr/bin/systemctl reload apache2
+    - /bin/chmod +x /opt/scripts/*
+    - /usr/bin/docker ps
+    - /usr/bin/docker images
+    - /usr/bin/docker logs *
+    - /usr/sbin/service * restart
+    - /usr/sbin/service * stop
+    - /usr/sbin/service * start
+    - /usr/bin/tail -f /var/log/*.log
+    - /usr/bin/less /var/log/*.log
+    - /usr/bin/rsync * *
+    - /usr/bin/scp * *
+    - /bin/mount
+    - /bin/umount
+    - /usr/bin/tar czf * *
+    - /usr/bin/tar xzf * *
+2026-01-21 00:35:11,081 p=63723 u=marek n=ansible | TASK [Utwórz backup istniejącego pliku sudoers (jeśli istnieje)] ********************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:11,398 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:11,401 p=63723 u=marek n=ansible | TASK [Wygeneruj plik sudoers dla użytkownika] ***************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:11,925 p=63723 u=marek n=ansible | changed: [test-server]
+2026-01-21 00:35:11,928 p=63723 u=marek n=ansible | TASK [Sprawdź składnię wszystkich plików sudoers] ***********************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,153 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:12,156 p=63723 u=marek n=ansible | TASK [Wyświetl zawartość utworzonego pliku] *****************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,379 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:12,381 p=63723 u=marek n=ansible | TASK [Pokaż zawartość pliku sudoers] ************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,407 p=63723 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === ZAWARTOŚĆ PLIKU /etc/sudoers.d/98-jan ===
+    # Sudoers file for user: jan
+    # Generated by Ansible on 2026-01-20T23:35:10Z
+    #
+    # This file allows jan to execute specific commands without password
+    #
+  
+    # User privilege specification
+    jan ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
+    jan ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
+    jan ALL=(ALL) NOPASSWD: /usr/bin/systemctl status nginx
+    jan ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart apache2
+    jan ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload apache2
+    jan ALL=(ALL) NOPASSWD: /bin/chmod +x /opt/scripts/*
+    jan ALL=(ALL) NOPASSWD: /usr/bin/docker ps
+    jan ALL=(ALL) NOPASSWD: /usr/bin/docker images
+    jan ALL=(ALL) NOPASSWD: /usr/bin/docker logs *
+    jan ALL=(ALL) NOPASSWD: /usr/sbin/service * restart
+    jan ALL=(ALL) NOPASSWD: /usr/sbin/service * stop
+    jan ALL=(ALL) NOPASSWD: /usr/sbin/service * start
+    jan ALL=(ALL) NOPASSWD: /usr/bin/tail -f /var/log/*.log
+    jan ALL=(ALL) NOPASSWD: /usr/bin/less /var/log/*.log
+    jan ALL=(ALL) NOPASSWD: /usr/bin/rsync * *
+    jan ALL=(ALL) NOPASSWD: /usr/bin/scp * *
+    jan ALL=(ALL) NOPASSWD: /bin/mount
+    jan ALL=(ALL) NOPASSWD: /bin/umount
+    jan ALL=(ALL) NOPASSWD: /usr/bin/tar czf * *
+    jan ALL=(ALL) NOPASSWD: /usr/bin/tar xzf * *
+2026-01-21 00:35:12,409 p=63723 u=marek n=ansible | TASK [Test uprawnień sudo dla użytkownika] ******************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,592 p=63723 u=marek n=ansible | ok: [test-server]
+2026-01-21 00:35:12,595 p=63723 u=marek n=ansible | TASK [Wyświetl podsumowanie] ********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,622 p=63723 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+    Użytkownik: jan
+    Plik sudoers: /etc/sudoers.d/98-jan
+    Status: Utworzony
+    Walidacja: Pomyślna
+  
+    === SPRAWDZENIE UPRAWNIEŃ ===
+    Pasujące wpisy Defaults dla jan na localhost:
+    Użytkownik jan może uruchamiać na localhost następujące polecenia:
+        (ALL) NOPASSWD: /usr/bin/systemctl restart nginx
+        (ALL) NOPASSWD: /usr/bin/systemctl reload nginx
+        (ALL) NOPASSWD: /usr/bin/systemctl status nginx
+        (ALL) NOPASSWD: /usr/bin/systemctl restart apache2
+        (ALL) NOPASSWD: /usr/bin/systemctl reload apache2
+        (ALL) NOPASSWD: /bin/chmod +x /opt/scripts/*
+        (ALL) NOPASSWD: /usr/bin/docker ps
+        (ALL) NOPASSWD: /usr/bin/docker images
+        (ALL) NOPASSWD: /usr/bin/docker logs *
+        (ALL) NOPASSWD: /usr/sbin/service * restart
+        (ALL) NOPASSWD: /usr/sbin/service * stop
+        (ALL) NOPASSWD: /usr/sbin/service * start
+        (ALL) NOPASSWD: /usr/bin/tail -f /var/log/*.log
+        (ALL) NOPASSWD: /usr/bin/less /var/log/*.log
+        (ALL) NOPASSWD: /usr/bin/rsync * *
+        (ALL) NOPASSWD: /usr/bin/scp * *
+        (ALL) NOPASSWD: /bin/mount
+        (ALL) NOPASSWD: /bin/umount
+        (ALL) NOPASSWD: /usr/bin/tar czf * *
+        (ALL) NOPASSWD: /usr/bin/tar xzf * *
+  
+    === TESTOWANIE ===
+    Aby przetestować uprawnienia, zaloguj się jako jan:
+    sudo su - jan
+  
+    Następnie sprawdź dostępne komendy:
+    sudo -l
+  
+    === ZARZĄDZANIE ===
+    Plik konfiguracyjny: /etc/sudoers.d/98-jan
+    Edytuj szablon komend: /home/marek/CODE/ansible-automation-linux/playbooks/../templates/sudo_commands
+    Usuń uprawnienia: sudo rm /etc/sudoers.d/98-jan
+2026-01-21 00:35:12,629 p=63723 u=marek n=ansible | PLAY RECAP **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+2026-01-21 00:35:12,629 p=63723 u=marek n=ansible | test-server                : ok=13   changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+2026-01-21 09:10:20,742 p=69906 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 09:10:20,746 p=69906 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 09:10:21,702 p=69906 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:10:21,704 p=69906 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika lub grupy] **************************
+2026-01-21 09:10:21,725 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:21,728 p=69906 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-01-21 09:10:21,747 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:21,750 p=69906 u=marek n=ansible | TASK [Sprawdź czy grupa istnieje w systemie] ***********************************
+2026-01-21 09:10:21,966 p=69906 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:10:21,969 p=69906 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-01-21 09:10:21,995 p=69906 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Tryb: group
+    Grupa: sudo
+    Plik sudoers: /etc/sudoers.d/98-sudo
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 09:10:22,001 p=69906 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-01-21 09:10:22,218 p=69906 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:10:22,220 p=69906 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-01-21 09:10:22,244 p=69906 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:10:22,246 p=69906 u=marek n=ansible | TASK [Wyświetl komendy do skonfigurowania] *************************************
+2026-01-21 09:10:22,273 p=69906 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KOMENDY SUDO DLA SUDO (GROUP) ===
+    - /usr/bin/systemctl restart nginx
+    - /usr/bin/systemctl reload nginx
+    - /usr/bin/systemctl status nginx
+    - /usr/bin/systemctl restart apache2
+    - /usr/bin/systemctl reload apache2
+    - /bin/chmod +x /opt/scripts/*
+    - /usr/bin/docker ps
+    - /usr/bin/docker images
+    - /usr/bin/docker logs *
+    - /usr/sbin/service * restart
+    - /usr/sbin/service * stop
+    - /usr/sbin/service * start
+    - /usr/bin/tail -f /var/log/*.log
+    - /usr/bin/less /var/log/*.log
+    - /usr/bin/rsync * *
+    - /usr/bin/scp * *
+    - /bin/mount
+    - /bin/umount
+    - /usr/bin/tar czf * *
+    - /usr/bin/tar xzf * *
+2026-01-21 09:10:22,276 p=69906 u=marek n=ansible | TASK [Utwórz backup istniejącego pliku sudoers (jeśli istnieje)] ***************
+2026-01-21 09:10:22,283 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:22,286 p=69906 u=marek n=ansible | TASK [Wygeneruj plik sudoers dla użytkownika] **********************************
+2026-01-21 09:10:22,767 p=69906 u=marek n=ansible | --- before
++++ after: /home/marek/.ansible/tmp/ansible-local-699065dm07o2i/tmper4xl3pr/sudoers_user.j2
+@@ -0,0 +1,27 @@
++# Sudoers file for group: sudo
++# Generated by Ansible on 2026-01-21T08:10:21Z
++#
++# This file allows sudo to execute specific commands without password
++#
++
++# Group privilege specification
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl status nginx
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart apache2
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload apache2
++%sudo ALL=(ALL) NOPASSWD: /bin/chmod +x /opt/scripts/*
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/docker ps
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/docker images
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/docker logs *
++%sudo ALL=(ALL) NOPASSWD: /usr/sbin/service * restart
++%sudo ALL=(ALL) NOPASSWD: /usr/sbin/service * stop
++%sudo ALL=(ALL) NOPASSWD: /usr/sbin/service * start
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/tail -f /var/log/*.log
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/less /var/log/*.log
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/rsync * *
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/scp * *
++%sudo ALL=(ALL) NOPASSWD: /bin/mount
++%sudo ALL=(ALL) NOPASSWD: /bin/umount
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/tar czf * *
++%sudo ALL=(ALL) NOPASSWD: /usr/bin/tar xzf * *
+
+
+2026-01-21 09:10:22,767 p=69906 u=marek n=ansible | changed: [test-server]
+2026-01-21 09:10:22,770 p=69906 u=marek n=ansible | TASK [Sprawdź składnię wszystkich plików sudoers] ******************************
+2026-01-21 09:10:22,778 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:22,781 p=69906 u=marek n=ansible | TASK [Wyświetl zawartość utworzonego pliku] ************************************
+2026-01-21 09:10:22,789 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:22,792 p=69906 u=marek n=ansible | TASK [Pokaż zawartość pliku sudoers] *******************************************
+2026-01-21 09:10:22,816 p=69906 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === ZAWARTOŚĆ PLIKU /etc/sudoers.d/98-sudo ===
+    Dry-run - plik nie został utworzony
+2026-01-21 09:10:22,818 p=69906 u=marek n=ansible | TASK [Test uprawnień sudo dla użytkownika] *************************************
+2026-01-21 09:10:22,837 p=69906 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:10:22,840 p=69906 u=marek n=ansible | TASK [Wyświetl podsumowanie] ***************************************************
+2026-01-21 09:10:22,872 p=69906 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+    Tryb: group
+    Grupa: sudo
+    Plik sudoers: /etc/sudoers.d/98-sudo
+    Status: Dry-run - zmiany nie zostały zastosowane
+    Walidacja: Pominięta
+  
+    === SPRAWDZENIE UPRAWNIEŃ ===
+    Nie sprawdzano (tryb dry-run lub grupa)
+  
+    === TESTOWANIE ===
+    Aby przetestować uprawnienia, zaloguj się jako użytkownik z grupy sudo:
+  
+    Następnie sprawdź dostępne komendy:
+    sudo -l
+  
+    === ZARZĄDZANIE ===
+    Plik konfiguracyjny: /etc/sudoers.d/98-sudo
+    Edytuj szablon komend: /home/marek/CODE/ansible-automation-linux/playbooks/../templates/sudo_commands
+    Usuń uprawnienia: sudo rm /etc/sudoers.d/98-sudo
+2026-01-21 09:10:22,879 p=69906 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 09:10:22,879 p=69906 u=marek n=ansible | test-server                : ok=9    changed=1    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+2026-01-21 09:45:16,924 p=73136 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-01-21 09:45:16,927 p=73136 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-01-21 09:45:17,846 p=73136 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:45:17,848 p=73136 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika lub grupy] **************************
+2026-01-21 09:45:17,869 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:17,872 p=73136 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-01-21 09:45:17,892 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:17,895 p=73136 u=marek n=ansible | TASK [Sprawdź czy grupa lokalna istnieje w systemie] ***************************
+2026-01-21 09:45:17,915 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:17,917 p=73136 u=marek n=ansible | TASK [Info: Pomijam sprawdzanie grupy AD/LDAP] *********************************
+2026-01-21 09:45:17,939 p=73136 u=marek n=ansible | ok: [test-server] => 
+  msg: Grupa AD/LDAP 'AD_Admins' - pomijam walidację (grupy AD mogą nie być widoczne przez getent)
+2026-01-21 09:45:17,942 p=73136 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-01-21 09:45:17,972 p=73136 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Tryb: groupldap (AD/LDAP)
+    Grupa: AD_Admins
+    Plik sudoers: /etc/sudoers.d/98-AD_Admins
+    Szablon komend: sudo_commands
+    Priorytet: 98
+2026-01-21 09:45:17,978 p=73136 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-01-21 09:45:18,196 p=73136 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:45:18,199 p=73136 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-01-21 09:45:18,223 p=73136 u=marek n=ansible | ok: [test-server]
+2026-01-21 09:45:18,226 p=73136 u=marek n=ansible | TASK [Wyświetl komendy do skonfigurowania] *************************************
+2026-01-21 09:45:18,254 p=73136 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KOMENDY SUDO DLA AD_ADMINS (GROUPLDAP) ===
+    - /usr/bin/systemctl restart nginx
+    - /usr/bin/systemctl reload nginx
+    - /usr/bin/systemctl status nginx
+    - /usr/bin/systemctl restart apache2
+    - /usr/bin/systemctl reload apache2
+    - /bin/chmod +x /opt/scripts/*
+    - /usr/bin/docker ps
+    - /usr/bin/docker images
+    - /usr/bin/docker logs *
+    - /usr/sbin/service * restart
+    - /usr/sbin/service * stop
+    - /usr/sbin/service * start
+    - /usr/bin/tail -f /var/log/*.log
+    - /usr/bin/less /var/log/*.log
+    - /usr/bin/rsync * *
+    - /usr/bin/scp * *
+    - /bin/mount
+    - /bin/umount
+    - /usr/bin/tar czf * *
+    - /usr/bin/tar xzf * *
+2026-01-21 09:45:18,257 p=73136 u=marek n=ansible | TASK [Utwórz backup istniejącego pliku sudoers (jeśli istnieje)] ***************
+2026-01-21 09:45:18,264 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:18,267 p=73136 u=marek n=ansible | TASK [Wygeneruj plik sudoers dla użytkownika] **********************************
+2026-01-21 09:45:18,762 p=73136 u=marek n=ansible | --- before
++++ after: /home/marek/.ansible/tmp/ansible-local-73136hp8zexn2/tmp3z6l1p77/sudoers_user.j2
+@@ -0,0 +1,27 @@
++# Sudoers file for groupldap: AD_Admins
++# Generated by Ansible on 2026-01-21T08:45:17Z
++#
++# This file allows AD_Admins to execute specific commands without password
++#
++
++# User privilege specification
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/systemctl status nginx
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart apache2
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload apache2
++%AD_Admins ALL=(ALL) NOPASSWD: /bin/chmod +x /opt/scripts/*
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/docker ps
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/docker images
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/docker logs *
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/sbin/service * restart
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/sbin/service * stop
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/sbin/service * start
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/tail -f /var/log/*.log
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/less /var/log/*.log
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/rsync * *
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/scp * *
++%AD_Admins ALL=(ALL) NOPASSWD: /bin/mount
++%AD_Admins ALL=(ALL) NOPASSWD: /bin/umount
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/tar czf * *
++%AD_Admins ALL=(ALL) NOPASSWD: /usr/bin/tar xzf * *
+
+
+2026-01-21 09:45:18,763 p=73136 u=marek n=ansible | changed: [test-server]
+2026-01-21 09:45:18,766 p=73136 u=marek n=ansible | TASK [Sprawdź składnię wszystkich plików sudoers] ******************************
+2026-01-21 09:45:18,773 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:18,776 p=73136 u=marek n=ansible | TASK [Wyświetl zawartość utworzonego pliku] ************************************
+2026-01-21 09:45:18,786 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:18,790 p=73136 u=marek n=ansible | TASK [Pokaż zawartość pliku sudoers] *******************************************
+2026-01-21 09:45:18,815 p=73136 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === ZAWARTOŚĆ PLIKU /etc/sudoers.d/98-AD_Admins ===
+    Dry-run - plik nie został utworzony
+2026-01-21 09:45:18,818 p=73136 u=marek n=ansible | TASK [Test uprawnień sudo dla użytkownika] *************************************
+2026-01-21 09:45:18,839 p=73136 u=marek n=ansible | skipping: [test-server]
+2026-01-21 09:45:18,842 p=73136 u=marek n=ansible | TASK [Wyświetl podsumowanie] ***************************************************
+2026-01-21 09:45:18,876 p=73136 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+    Tryb: groupldap (AD/LDAP)
+    Grupa: AD_Admins
+    Plik sudoers: /etc/sudoers.d/98-AD_Admins
+    Status: Dry-run - zmiany nie zostały zastosowane
+    Walidacja: Pominięta
+  
+    === SPRAWDZENIE UPRAWNIEŃ ===
+    Nie sprawdzano (tryb dry-run lub grupa)
+  
+    === TESTOWANIE ===
+    Aby przetestować uprawnienia, zaloguj się jako użytkownik z grupy AD_Admins:
+  
+    Następnie sprawdź dostępne komendy:
+    sudo -l
+  
+    === ZARZĄDZANIE ===
+    Plik konfiguracyjny: /etc/sudoers.d/98-AD_Admins
+    Edytuj szablon komend: /home/marek/CODE/ansible-automation-linux/playbooks/../templates/sudo_commands
+    Usuń uprawnienia: sudo rm /etc/sudoers.d/98-AD_Admins
+2026-01-21 09:45:18,883 p=73136 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-01-21 09:45:18,883 p=73136 u=marek n=ansible | test-server                : ok=9    changed=1    unreachable=0    failed=0    skipped=7    rescued=0    ignored=0   
+2026-02-03 18:52:50,939 p=734652 u=marek n=ansible | PLAY [SUDOERS MODULE - Konfiguracja uprawnień sudo] ****************************
+2026-02-03 18:52:50,944 p=734652 u=marek n=ansible | TASK [Gathering Facts] *********************************************************
+2026-02-03 18:52:52,069 p=734652 u=marek n=ansible | ok: [test-server]
+2026-02-03 18:52:52,072 p=734652 u=marek n=ansible | TASK [Sprawdź czy podano nazwę użytkownika lub grupy] **************************
+2026-02-03 18:52:52,093 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,096 p=734652 u=marek n=ansible | TASK [Sprawdź czy użytkownik istnieje w systemie] ******************************
+2026-02-03 18:52:52,114 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,116 p=734652 u=marek n=ansible | TASK [Sprawdź czy grupa lokalna istnieje w systemie] ***************************
+2026-02-03 18:52:52,132 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,135 p=734652 u=marek n=ansible | TASK [Info: Pomijam sprawdzanie grupy AD/LDAP] *********************************
+2026-02-03 18:52:52,157 p=734652 u=marek n=ansible | ok: [test-server] => 
+  msg: Grupa AD/LDAP 'IT_Support' - pomijam walidację (grupy AD mogą nie być widoczne przez getent)
+2026-02-03 18:52:52,159 p=734652 u=marek n=ansible | TASK [Wyświetl informacje o konfiguracji sudoers] ******************************
+2026-02-03 18:52:52,187 p=734652 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === KONFIGURACJA SUDOERS ===
+    Tryb: groupldap (AD/LDAP) -> przełączenie na użytkownika
+    Grupa: IT_Support
+    Użytkownik docelowy: appuser
+    Plik sudoers: /etc/sudoers.d/98-IT_Support
+    Priorytet: 98
+2026-02-03 18:52:52,192 p=734652 u=marek n=ansible | TASK [Sprawdź czy katalog sudoers.d istnieje] **********************************
+2026-02-03 18:52:52,410 p=734652 u=marek n=ansible | ok: [test-server]
+2026-02-03 18:52:52,413 p=734652 u=marek n=ansible | TASK [Wczytaj komendy z pliku szablonu] ****************************************
+2026-02-03 18:52:52,431 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,434 p=734652 u=marek n=ansible | TASK [Wyświetl komendy do skonfigurowania] *************************************
+2026-02-03 18:52:52,453 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,456 p=734652 u=marek n=ansible | TASK [Info: Tryb przełączenia na użytkownika] **********************************
+2026-02-03 18:52:52,481 p=734652 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PRZEŁĄCZENIE NA UŻYTKOWNIKA ===
+    Grupa IT_Support będzie mogła przełączyć się na użytkownika appuser
+    Wpis sudoers: %IT_Support ALL=(appuser) NOPASSWD: ALL
+2026-02-03 18:52:52,484 p=734652 u=marek n=ansible | TASK [Utwórz backup istniejącego pliku sudoers (jeśli istnieje)] ***************
+2026-02-03 18:52:52,492 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,495 p=734652 u=marek n=ansible | TASK [Wygeneruj plik sudoers dla użytkownika] **********************************
+2026-02-03 18:52:52,956 p=734652 u=marek n=ansible | --- before
++++ after: /home/marek/.ansible/tmp/ansible-local-734652qik8fzao/tmpyklar72k/sudoers_user.j2
+@@ -0,0 +1,8 @@
++# Sudoers file for groupldap: IT_Support
++# Generated by Ansible on 2026-02-03T17:52:51Z
++#
++# This file allows IT_Support to switch to user appuser
++#
++
++# Switch to appuser privilege
++%IT_Support ALL=(appuser) NOPASSWD: ALL
+
+
+2026-02-03 18:52:52,957 p=734652 u=marek n=ansible | changed: [test-server]
+2026-02-03 18:52:52,963 p=734652 u=marek n=ansible | TASK [Sprawdź składnię wszystkich plików sudoers] ******************************
+2026-02-03 18:52:52,970 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,972 p=734652 u=marek n=ansible | TASK [Wyświetl zawartość utworzonego pliku] ************************************
+2026-02-03 18:52:52,979 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:52,982 p=734652 u=marek n=ansible | TASK [Pokaż zawartość pliku sudoers] *******************************************
+2026-02-03 18:52:53,005 p=734652 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === ZAWARTOŚĆ PLIKU /etc/sudoers.d/98-IT_Support ===
+    Dry-run - plik nie został utworzony
+2026-02-03 18:52:53,008 p=734652 u=marek n=ansible | TASK [Test uprawnień sudo dla użytkownika] *************************************
+2026-02-03 18:52:53,026 p=734652 u=marek n=ansible | skipping: [test-server]
+2026-02-03 18:52:53,029 p=734652 u=marek n=ansible | TASK [Wyświetl podsumowanie] ***************************************************
+2026-02-03 18:52:53,059 p=734652 u=marek n=ansible | ok: [test-server] => 
+  msg: |-
+    === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+    Tryb: groupldap (AD/LDAP) -> przełączenie na użytkownika
+    Grupa: IT_Support
+    Użytkownik docelowy: appuser
+    Plik sudoers: /etc/sudoers.d/98-IT_Support
+    Status: Dry-run - zmiany nie zostały zastosowane
+    Walidacja: Pominięta
+  
+    === TESTOWANIE ===
+    Aby przetestować, zaloguj się jako użytkownik z grupy IT_Support i wykonaj:
+    sudo su - appuser
+  
+    === ZARZĄDZANIE ===
+    Plik konfiguracyjny: /etc/sudoers.d/98-IT_Support
+    Usuń uprawnienia: sudo rm /etc/sudoers.d/98-IT_Support
+2026-02-03 18:52:53,066 p=734652 u=marek n=ansible | PLAY RECAP *********************************************************************
+2026-02-03 18:52:53,066 p=734652 u=marek n=ansible | test-server                : ok=8    changed=1    unreachable=0    failed=0    skipped=9    rescued=0    ignored=0   
