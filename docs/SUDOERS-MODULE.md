@@ -15,6 +15,9 @@ Moduł `sudoers` służy do konfiguracji uprawnień sudo dla użytkowników i gr
 
 # Dla grupy AD/LDAP (bez sprawdzania - grupy AD mogą nie być widoczne przez getent)
 ./run-automation.sh sudoers -e "groupldap=NAZWA_GRUPY [opcje]"
+
+# Przełączenie na użytkownika (bez komend - tylko sudo su)
+./run-automation.sh sudoers -e "groupldap=NAZWA_GRUPY target_user=UŻYTKOWNIK"
 ```
 
 ### Wymagane parametry (jeden z poniższych)
@@ -25,6 +28,7 @@ Moduł `sudoers` służy do konfiguracji uprawnień sudo dla użytkowników i gr
 ### Opcjonalne parametry
 - `commands_file` - nazwa pliku z komendami (domyślnie: `sudo_commands`)
 - `priority` - priorytet pliku sudoers (domyślnie: `98`)
+- `target_user` - użytkownik docelowy dla przełączenia (pomija `commands_file`)
 
 ## Jak to działa
 
@@ -82,24 +86,42 @@ webmaster ALL=(ALL) NOPASSWD: /usr/bin/docker ps
 ./run-automation.sh sudoers -e "groupldap=IT_Support commands_file=webmaster_commands"
 ```
 
-### 4. Własny plik z komendami
+### 4. Przełączenie na użytkownika (target_user)
+```bash
+# Grupa AD może przełączyć się na użytkownika appuser (sudo su - appuser)
+./run-automation.sh sudoers -e "groupldap=IT_Support target_user=appuser"
+
+# Grupa lokalna może przełączyć się na użytkownika tomcat
+./run-automation.sh sudoers -e "group=developers target_user=tomcat"
+```
+
+Wygeneruje plik `/etc/sudoers.d/98-IT_Support`:
+```
+# Sudoers file for groupldap: IT_Support
+# This file allows IT_Support to switch to user appuser
+
+%IT_Support ALL=(appuser) NOPASSWD: ALL
+```
+
+### 5. Własny plik z komendami
 ```bash
 # Najpierw utwórz plik templates/admin_commands z komendami
 ./run-automation.sh sudoers -e "user=admin commands_file=admin_commands"
 ```
 
-### 5. Niestandardowy priorytet
+### 6. Niestandardowy priorytet
 ```bash
 # Tworzy plik 99-admin zamiast 98-admin
 ./run-automation.sh sudoers -e "user=admin priority=99"
 ```
 
-### 6. Dry-run (sprawdzenie)
+### 7. Dry-run (sprawdzenie)
 ```bash
 # Sprawdź co zostanie utworzone bez wprowadzania zmian
 ./run-automation.sh sudoers -e "user=webmaster" -c
 ./run-automation.sh sudoers -e "group=developers" -c
 ./run-automation.sh sudoers -e "groupldap=AD_Admins" -c
+./run-automation.sh sudoers -e "groupldap=IT_Support target_user=appuser" -c
 ```
 
 ## Różnica między `group` a `groupldap`
