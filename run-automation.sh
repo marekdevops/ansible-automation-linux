@@ -65,6 +65,7 @@ AKCJE:
     backup                   Zarządzanie archiwami i kopiami zapasowymi
     lvm                      Zarządzanie dyskami i wolumenami LVM
     raportinfra              Raport infrastruktury serwerów (CPU, RAM, Dyski, OS)
+    groupldap                Zezwalanie grupom AD/LDAP na logowanie (realm permit)
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -148,6 +149,12 @@ PRZYKŁADY:
     
     # Raport infrastruktury (format CSV - dla wielu serwerów)
     $0 raportinfra -i inventory/production.yml -e "format=csv"
+
+    # Zezwolenie grupie AD na logowanie
+    $0 groupldap -e "group=Domain_Admins"
+
+    # Zezwolenie grupie AD na konkretnym hoście
+    $0 groupldap -e "group=IT_Support" -l test-server
 EOF
 }
 
@@ -236,6 +243,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         raportinfra)
             PLAYBOOK="playbooks/raportinfra.yml"
+            shift
+            ;;
+        groupldap)
+            PLAYBOOK="playbooks/groupldap.yml"
             shift
             ;;
         check)

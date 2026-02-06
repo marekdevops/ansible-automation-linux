@@ -1,0 +1,90 @@
+---
+# Moduł GROUPLDAP - Zezwalanie grupom AD/LDAP na logowanie
+# Plik: playbooks/groupldap.yml
+# Użycie: ./run-automation.sh groupldap -e "group=NAZWA_GRUPY"
+
+- name: "GROUPLDAP MODULE - Zezwalanie grupom AD/LDAP na logowanie"
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    # Podstawowe zmienne
+    groupldap_group: "{{ group | default('') }}"
+
+  pre_tasks:
+    - name: "Sprawdź czy podano nazwę grupy"
+      fail:
+        msg: |
+          Musisz podać nazwę grupy AD/LDAP!
+          Użyj: ./run-automation.sh groupldap -e "group=NAZWA_GRUPY"
+      when: groupldap_group == ""
+      tags: always
+
+    - name: "Wyświetl informacje o konfiguracji"
+      debug:
+        msg: |
+          === KONFIGURACJA GROUPLDAP ===
+          Grupa AD/LDAP: {{ groupldap_group }}
+          Komenda: realm permit -g {{ groupldap_group }}
+          Host: {{ inventory_hostname }}
+      tags: always
+
+  tasks:
+    - name: "Sprawdź czy realm jest zainstalowany"
+      command: which realm
+      register: realm_check
+      changed_when: false
+      failed_when: false
+      tags: groupldap
+
+    - name: "Błąd: realm nie jest zainstalowany"
+      fail:
+        msg: |
+          Komenda 'realm' nie jest zainstalowana na tym hoście.
+          Zainstaluj pakiet realmd: apt install realmd (Debian/Ubuntu) lub yum install realmd (RHEL/CentOS)
+      when: realm_check.rc != 0
+      tags: groupldap
+
+    - name: "Sprawdź aktualny status realm"
+      command: realm list
+      register: realm_status
+      changed_when: false
+      tags: groupldap
+
+    - name: "Wyświetl aktualny status realm"
+      debug:
+        msg: |
+          === AKTUALNY STATUS REALM ===
+          {{ realm_status.stdout }}
+      tags: groupldap
+
+    - name: "Zezwól grupie AD/LDAP na logowanie"
+      command: "realm permit -g {{ groupldap_group }}"
+      register: realm_permit
+      changed_when: realm_permit.rc == 0
+      tags: groupldap
+
+    - name: "Sprawdź status po zmianie"
+      command: realm list
+      register: realm_status_after
+      changed_when: false
+      when: not ansible_check_mode
+      tags: groupldap
+
+    - name: "Wyświetl podsumowanie"
+      debug:
+        msg: |
+          === PODSUMOWANIE GROUPLDAP ===
+          Grupa: {{ groupldap_group }}
+          Status: {{ 'Dry-run - zmiany nie zostały zastosowane' if ansible_check_mode else 'Zezwolono na logowanie' }}
+
+          === TESTOWANIE ===
+          Aby przetestować, zaloguj się jako użytkownik z grupy {{ groupldap_group }}:
+          ssh uzytkownik@{{ ansible_host | default(inventory_hostname) }}
+
+          === ZARZĄDZANIE ===
+          Sprawdź dozwolone grupy: realm list
+          Cofnij dostęp: realm deny -g {{ groupldap_group }}
+          Zezwól wszystkim: realm permit --all
+      tags: groupldap
