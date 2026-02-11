@@ -66,6 +66,7 @@ AKCJE:
     lvm                      Zarządzanie dyskami i wolumenami LVM
     raportinfra              Raport infrastruktury serwerów (CPU, RAM, Dyski, OS)
     groupldap                Zezwalanie grupom AD/LDAP na logowanie (realm permit)
+    certs-check              Sprawdzanie certyfikatów maszynowych dla domeny
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -155,6 +156,12 @@ PRZYKŁADY:
 
     # Zezwolenie grupie AD na konkretnym hoście
     $0 groupldap -e "group=IT_Support" -l test-server
+
+    # Sprawdzenie certyfikatów dla domeny
+    $0 certs-check -e "domain=abc.com"
+
+    # Sprawdzenie certyfikatów z ostrzeżeniem 60 dni
+    $0 certs-check -e "domain=abc.com warn_days=60" -l test-server
 EOF
 }
 
@@ -247,6 +254,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         groupldap)
             PLAYBOOK="playbooks/groupldap.yml"
+            shift
+            ;;
+        certs-check)
+            PLAYBOOK="playbooks/certs-check.yml"
             shift
             ;;
         check)
