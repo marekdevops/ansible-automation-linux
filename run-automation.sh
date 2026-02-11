@@ -157,11 +157,11 @@ PRZYKŁADY:
     # Zezwolenie grupie AD na konkretnym hoście
     $0 groupldap -e "group=IT_Support" -l test-server
 
-    # Sprawdzenie certyfikatów dla domeny
+    # Sprawdzenie certyfikatów w bundlu (domyślny bundle RHEL)
     $0 certs-check -e "domain=abc.com"
 
-    # Sprawdzenie certyfikatów z ostrzeżeniem 60 dni
-    $0 certs-check -e "domain=abc.com warn_days=60" -l test-server
+    # Sprawdzenie certyfikatów z własnym bundlem
+    $0 certs-check -e "domain=abc.com bundle=/path/to/bundle.pem" -l test-server
 EOF
 }
 

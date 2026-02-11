@@ -1,9 +1,9 @@
 ---
-# Moduł CERTS-CHECK - Sprawdzanie certyfikatów maszynowych
+# Moduł CERTS-CHECK - Sprawdzanie certyfikatów w bundlu
 # Plik: playbooks/certs-check.yml
-# Użycie: ./run-automation.sh certs-check -e "domain=abc.com"
+# Użycie: ./run-automation.sh certs-check -e "domain=abc.com bundle=/etc/pki/tls/certs/ca-bundle.crt"
 
-- name: "CERTS-CHECK MODULE - Sprawdzanie certyfikatów"
+- name: "CERTS-CHECK MODULE - Sprawdzanie certyfikatów w bundlu"
   hosts: all
   gather_facts: true
   become: true
@@ -11,12 +11,7 @@
   vars:
     # Podstawowe zmienne
     certs_domain: "{{ domain | default('') }}"
-    certs_paths:
-      - /etc/pki/tls/certs
-      - /etc/pki/ca-trust/source/anchors
-      - /etc/ssl/certs
-    certs_extensions: "*.crt,*.pem,*.cert,*.cer"
-    # Dni do wygaśnięcia - ostrzeżenie
+    certs_bundle: "{{ bundle | default('/etc/pki/tls/certs/ca-bundle.crt') }}"
     certs_warn_days: "{{ warn_days | default(30) }}"
 
   pre_tasks:
@@ -25,6 +20,7 @@
         msg: |
           Musisz podać domenę do wyszukania!
           Użyj: ./run-automation.sh certs-check -e "domain=abc.com"
+          Lub:  ./run-automation.sh certs-check -e "domain=abc.com bundle=/path/to/bundle.pem"
       when: certs_domain == ""
       tags: always
 
@@ -33,8 +29,7 @@
         msg: |
           === KONFIGURACJA CERTS-CHECK ===
           Domena: {{ certs_domain }}
-          Wzorzec: *.{{ certs_domain }}, {{ certs_domain }}
-          Ścieżki: {{ certs_paths | join(', ') }}
+          Bundle: {{ certs_bundle }}
           Ostrzeżenie przed wygaśnięciem: {{ certs_warn_days }} dni
           Host: {{ inventory_hostname }}
       tags: always
@@ -49,92 +44,192 @@
 
     - name: "Błąd: openssl nie jest zainstalowany"
       fail:
-        msg: "Komenda 'openssl' nie jest zainstalowana na tym hoście."
+        msg: |
+          Komenda 'openssl' nie jest zainstalowana na tym hoście.
+          Zainstaluj: yum install openssl (RHEL/CentOS) lub apt install openssl (Debian/Ubuntu)
       when: openssl_check.rc != 0
       tags: certs
 
-    - name: "Znajdź wszystkie pliki certyfikatów"
-      find:
-        paths: "{{ certs_paths }}"
-        patterns: "{{ certs_extensions.split(',') }}"
-        recurse: yes
-        file_type: file
-      register: all_certs
+    - name: "Sprawdź czy plik bundla istnieje"
+      stat:
+        path: "{{ certs_bundle }}"
+      register: bundle_stat
       tags: certs
 
-    - name: "Wyświetl liczbę znalezionych certyfikatów"
-      debug:
-        msg: "Znaleziono {{ all_certs.files | length }} plików certyfikatów do przeszukania"
+    - name: "Błąd: plik bundla nie istnieje"
+      fail:
+        msg: "Plik bundla '{{ certs_bundle }}' nie istnieje!"
+      when: not bundle_stat.stat.exists
       tags: certs
 
-    - name: "Sprawdź zawartość każdego certyfikatu"
+    - name: "Analiza certyfikatów w bundlu"
       shell: |
-        cert_file="{{ item.path }}"
+        #!/bin/bash
 
-        # Sprawdź czy plik zawiera certyfikat
-        if ! openssl x509 -in "$cert_file" -noout 2>/dev/null; then
-          echo "SKIP:$cert_file:Nie jest certyfikatem X.509"
-          exit 0
-        fi
+        BUNDLE_FILE="{{ certs_bundle }}"
+        SEARCH_NAME="{{ certs_domain }}"
+        WARN_DAYS="{{ certs_warn_days }}"
 
-        # Pobierz Subject (CN)
-        subject=$(openssl x509 -in "$cert_file" -noout -subject 2>/dev/null | sed 's/subject=//')
-        cn=$(echo "$subject" | grep -oP 'CN\s*=\s*\K[^,/]+' | head -1)
+        # Tymczasowy katalog
+        TEMP_DIR=$(mktemp -d)
+        trap 'rm -rf "$TEMP_DIR"' EXIT
 
-        # Pobierz SAN
-        san=$(openssl x509 -in "$cert_file" -noout -text 2>/dev/null | grep -A1 "Subject Alternative Name" | tail -1 | sed 's/^\s*//')
+        # Rozdzielenie bundla na pojedyncze certyfikaty
+        cert_counter=0
+        current_cert=""
+        in_cert=false
 
-        # Pobierz datę wygaśnięcia
-        expiry=$(openssl x509 -in "$cert_file" -noout -enddate 2>/dev/null | sed 's/notAfter=//')
-        expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null || echo "0")
-        now_epoch=$(date +%s)
-        days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+        while IFS= read -r line; do
+            if [[ "$line" == "-----BEGIN CERTIFICATE-----" ]]; then
+                in_cert=true
+                cert_counter=$((cert_counter + 1))
+                current_cert="$TEMP_DIR/cert_$cert_counter.pem"
+                echo "$line" > "$current_cert"
+            elif [[ "$line" == "-----END CERTIFICATE-----" ]]; then
+                if [[ "$in_cert" == true ]]; then
+                    echo "$line" >> "$current_cert"
+                    in_cert=false
+                fi
+            elif [[ "$in_cert" == true ]]; then
+                echo "$line" >> "$current_cert"
+            fi
+        done < "$BUNDLE_FILE"
 
-        # Sprawdź czy certyfikat pasuje do domeny
-        domain="{{ certs_domain }}"
-        if echo "$cn $san" | grep -qiE "(^|\s|\.|,)(\*\.)?${domain}($|\s|,)"; then
-          echo "MATCH:$cert_file:$cn:$san:$expiry:$days_left"
-        fi
-      register: cert_results
-      loop: "{{ all_certs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
+        echo "BUNDLE_TOTAL:$cert_counter"
+
+        # Funkcja sprawdzająca dopasowanie
+        cert_matches_name() {
+            local cert_file="$1"
+            local search_name="$2"
+
+            local cert_text=$(openssl x509 -in "$cert_file" -text -noout 2>/dev/null)
+            [ $? -ne 0 ] && return 1
+
+            # Sprawdź w Subject i SAN
+            if echo "$cert_text" | grep -qi "CN.*$search_name\|DNS:.*$search_name\|DNS:\*\.$search_name"; then
+                return 0
+            fi
+
+            return 1
+        }
+
+        # Przeszukiwanie certyfikatów
+        found_count=0
+
+        for cert_file in "$TEMP_DIR"/cert_*.pem; do
+            [ -f "$cert_file" ] || continue
+
+            if cert_matches_name "$cert_file" "$SEARCH_NAME"; then
+                found_count=$((found_count + 1))
+
+                # Pobierz informacje o certyfikacie
+                cert_info=$(openssl x509 -in "$cert_file" -text -noout 2>/dev/null)
+
+                # Subject (CN)
+                subject=$(echo "$cert_info" | grep "Subject:" | sed 's/.*Subject: //')
+                cn=$(echo "$subject" | grep -oP 'CN\s*=\s*\K[^,/]+' | head -1)
+
+                # Issuer
+                issuer=$(echo "$cert_info" | grep "Issuer:" | sed 's/.*Issuer: //')
+                issuer_cn=$(echo "$issuer" | grep -oP 'CN\s*=\s*\K[^,/]+' | head -1)
+
+                # Serial
+                serial=$(echo "$cert_info" | grep "Serial Number:" | sed 's/.*Serial Number: *//' | head -1)
+
+                # Daty
+                not_before=$(openssl x509 -in "$cert_file" -startdate -noout 2>/dev/null | sed 's/notBefore=//')
+                not_after=$(openssl x509 -in "$cert_file" -enddate -noout 2>/dev/null | sed 's/notAfter=//')
+
+                # Oblicz dni do wygaśnięcia
+                expiry_epoch=$(date -d "$not_after" +%s 2>/dev/null || echo "0")
+                now_epoch=$(date +%s)
+                days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+                # Status
+                if [ "$days_left" -lt 0 ]; then
+                    status="EXPIRED"
+                elif [ "$days_left" -le "$WARN_DAYS" ]; then
+                    status="EXPIRING_SOON"
+                else
+                    status="VALID"
+                fi
+
+                # SAN
+                san=$(echo "$cert_info" | grep -A1 "Subject Alternative Name:" | tail -n1 | sed 's/^\s*//')
+
+                # Key Usage
+                key_usage=$(echo "$cert_info" | grep -A1 "Key Usage:" | tail -n1 | sed 's/^\s*//')
+
+                # Algorytm
+                sig_alg=$(echo "$cert_info" | grep "Signature Algorithm:" | head -n1 | sed 's/.*Signature Algorithm: //')
+
+                # Output w formacie do parsowania
+                echo "CERT:$found_count|CN:$cn|ISSUER:$issuer_cn|SERIAL:$serial|NOT_BEFORE:$not_before|NOT_AFTER:$not_after|DAYS:$days_left|STATUS:$status|SAN:$san|KEY_USAGE:$key_usage|SIG_ALG:$sig_alg"
+            fi
+        done
+
+        echo "FOUND_TOTAL:$found_count"
+      register: cert_analysis
       changed_when: false
-      failed_when: false
       tags: certs
 
-    - name: "Przetwórz wyniki - znajdź pasujące certyfikaty"
+    - name: "Parsuj wyniki analizy"
       set_fact:
-        matching_certs: "{{ cert_results.results | map(attribute='stdout') | select('match', '^MATCH:') | list }}"
+        bundle_total: "{{ cert_analysis.stdout_lines | select('match', '^BUNDLE_TOTAL:') | first | default('BUNDLE_TOTAL:0') | regex_replace('^BUNDLE_TOTAL:', '') }}"
+        found_certs: "{{ cert_analysis.stdout_lines | select('match', '^CERT:') | list }}"
+        found_total: "{{ cert_analysis.stdout_lines | select('match', '^FOUND_TOTAL:') | first | default('FOUND_TOTAL:0') | regex_replace('^FOUND_TOTAL:', '') }}"
       tags: certs
 
-    - name: "Wyświetl znalezione certyfikaty"
+    - name: "Wyświetl wyniki"
       debug:
         msg: |
 
-          ╔══════════════════════════════════════════════════════════════════════════════╗
-          ║                    CERTYFIKATY DLA DOMENY: {{ certs_domain }}
-          ╠══════════════════════════════════════════════════════════════════════════════╣
-          {% if matching_certs | length == 0 %}
-          ║  Nie znaleziono certyfikatów pasujących do domeny {{ certs_domain }}
-          {% else %}
-          {% for cert in matching_certs %}
-          {% set parts = cert.split(':') %}
-          {% set file = parts[1] %}
-          {% set cn = parts[2] %}
-          {% set san = parts[3] if parts[3] else 'brak' %}
-          {% set expiry = parts[4] %}
-          {% set days = parts[5] | int %}
+          ╔══════════════════════════════════════════════════════════════════════════════════════════╗
+          ║  🔍 ANALIZA CERTYFIKATÓW DLA: {{ certs_domain }}
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ║  📁 Bundle: {{ certs_bundle }}
+          ║  📊 Certyfikatów w bundlu: {{ bundle_total }}
+          ║  🎯 Znalezionych dla domeny: {{ found_total }}
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          {% if found_certs | length == 0 %}
           ║
-          ║  📄 PLIK: {{ file }}
-          ║  ├── CN: {{ cn }}
-          ║  ├── SAN: {{ san | truncate(60) }}
-          ║  ├── Wygasa: {{ expiry }}
-          ║  └── Pozostało: {{ days }} dni {% if days < 0 %}⛔ WYGASŁ!{% elif days < certs_warn_days | int %}⚠️ WKRÓTCE WYGAŚNIE!{% else %}✅{% endif %}
+          ║  ℹ️  Nie znaleziono certyfikatów pasujących do domeny {{ certs_domain }}
+          ║
+          ║  💡 Wskazówki:
+          ║     • Sprawdź czy nazwa domeny jest poprawna
+          ║     • Spróbuj użyć części nazwy (np. 'example' zamiast 'www.example.com')
+          ║     • Sprawdź czy plik bundla zawiera szukane certyfikaty
+          ║
+          {% else %}
+          {% for cert in found_certs %}
+          {% set parts = cert.split('|') %}
+          {% set num = parts[0] | regex_replace('^CERT:', '') %}
+          {% set cn = parts[1] | regex_replace('^CN:', '') %}
+          {% set issuer = parts[2] | regex_replace('^ISSUER:', '') %}
+          {% set serial = parts[3] | regex_replace('^SERIAL:', '') %}
+          {% set not_before = parts[4] | regex_replace('^NOT_BEFORE:', '') %}
+          {% set not_after = parts[5] | regex_replace('^NOT_AFTER:', '') %}
+          {% set days = parts[6] | regex_replace('^DAYS:', '') | int %}
+          {% set status = parts[7] | regex_replace('^STATUS:', '') %}
+          {% set san = parts[8] | regex_replace('^SAN:', '') %}
+          {% set key_usage = parts[9] | regex_replace('^KEY_USAGE:', '') %}
+          {% set sig_alg = parts[10] | regex_replace('^SIG_ALG:', '') %}
+          ║
+          ║  🎯 CERTYFIKAT #{{ num }}
+          ║  ├── 👤 CN: {{ cn }}
+          ║  ├── 🏢 Wystawca: {{ issuer }}
+          ║  ├── 🔢 Serial: {{ serial | truncate(40) }}
+          ║  ├── 📅 Ważny od: {{ not_before }}
+          ║  ├── 📅 Ważny do: {{ not_after }}
+          ║  ├── ⏳ Pozostało: {{ days }} dni {% if status == 'EXPIRED' %}⛔ WYGASŁ!{% elif status == 'EXPIRING_SOON' %}⚠️ WKRÓTCE WYGAŚNIE!{% else %}✅{% endif %}
 
+          ║  ├── 🌐 SAN: {{ san | truncate(70) }}
+          ║  ├── 🔑 Key Usage: {{ key_usage }}
+          ║  └── 🔐 Algorytm: {{ sig_alg }}
+          ║
           {% endfor %}
           {% endif %}
-          ╚══════════════════════════════════════════════════════════════════════════════╝
+          ╚══════════════════════════════════════════════════════════════════════════════════════════╝
       tags: certs
 
     - name: "Podsumowanie"
@@ -143,16 +238,16 @@
           === PODSUMOWANIE CERTS-CHECK ===
           Host: {{ inventory_hostname }}
           Domena: {{ certs_domain }}
-          Przeszukane pliki: {{ all_certs.files | length }}
-          Znalezione certyfikaty: {{ matching_certs | length }}
-
+          Bundle: {{ certs_bundle }}
+          Certyfikatów w bundlu: {{ bundle_total }}
+          Znalezionych: {{ found_total }}
           {% set expired = [] %}
-          {% set expiring_soon = [] %}
-          {% for cert in matching_certs %}
-          {% set days = cert.split(':')[5] | int %}
-          {% if days < 0 %}{% set _ = expired.append(1) %}{% endif %}
-          {% if days >= 0 and days < certs_warn_days | int %}{% set _ = expiring_soon.append(1) %}{% endif %}
+          {% set expiring = [] %}
+          {% for cert in found_certs %}
+          {% set status = cert.split('|')[7] | regex_replace('^STATUS:', '') %}
+          {% if status == 'EXPIRED' %}{% set _ = expired.append(1) %}{% endif %}
+          {% if status == 'EXPIRING_SOON' %}{% set _ = expiring.append(1) %}{% endif %}
           {% endfor %}
           Wygasłe: {{ expired | length }}
-          Wygasające w ciągu {{ certs_warn_days }} dni: {{ expiring_soon | length }}
+          Wygasające (≤ {{ certs_warn_days }} dni): {{ expiring | length }}
       tags: certs

@@ -1,119 +1,130 @@
 # Moduł CERTS-CHECK - Dokumentacja
 
 ## Opis
-Moduł `certs-check` służy do sprawdzania certyfikatów maszynowych zainstalowanych na serwerach Linux. Wyszukuje certyfikaty pasujące do podanej domeny i wyświetla szczegóły: CN, SAN, datę wygaśnięcia.
+Moduł `certs-check` służy do sprawdzania certyfikatów w plikach bundle (PEM). Wyszukuje certyfikaty pasujące do podanej domeny i wyświetla szczegóły: CN, wystawcę, SAN, daty ważności, algorytm podpisu.
+
+Bazuje na skrypcie `cert_info.sh` - rozdziela bundle na pojedyncze certyfikaty i analizuje każdy z osobna.
 
 ## Podstawowe użycie
 
 ### Składnia
 ```bash
+# Domyślny bundle RHEL (/etc/pki/tls/certs/ca-bundle.crt)
 ./run-automation.sh certs-check -e "domain=DOMENA"
+
+# Własny plik bundle
+./run-automation.sh certs-check -e "domain=DOMENA bundle=/path/to/bundle.pem"
 ```
 
 ### Wymagane parametry
-- `domain` - nazwa domeny do wyszukania (np. `abc.com`)
+- `domain` - nazwa domeny do wyszukania (np. `abc.com`, `*.abc.com`)
 
 ### Opcjonalne parametry
+- `bundle` - ścieżka do pliku bundle (domyślnie: `/etc/pki/tls/certs/ca-bundle.crt`)
 - `warn_days` - liczba dni przed wygaśnięciem dla ostrzeżenia (domyślnie: `30`)
-
-## Przeszukiwane lokalizacje
-Moduł przeszukuje standardowe lokalizacje certyfikatów w RHEL/CentOS:
-- `/etc/pki/tls/certs`
-- `/etc/pki/ca-trust/source/anchors`
-- `/etc/ssl/certs`
-
-## Wyświetlane informacje
-Dla każdego znalezionego certyfikatu:
-- **Ścieżka pliku** - lokalizacja certyfikatu
-- **CN (Common Name)** - nazwa główna certyfikatu
-- **SAN (Subject Alternative Names)** - alternatywne nazwy
-- **Data wygaśnięcia** - kiedy certyfikat wygasa
-- **Pozostałe dni** - ile dni do wygaśnięcia
-- **Status** - wygasły / wkrótce wygaśnie / OK
 
 ## Przykłady użycia
 
-### 1. Podstawowe sprawdzenie
-```bash
-# Znajdź certyfikaty dla domeny abc.com
-./run-automation.sh certs-check -e "domain=abc.com"
-```
-
-### 2. Sprawdzenie na konkretnym hoście
+### 1. Podstawowe sprawdzenie (domyślny bundle RHEL)
 ```bash
 ./run-automation.sh certs-check -e "domain=abc.com" -l test-server
+```
+
+### 2. Własny plik bundle
+```bash
+./run-automation.sh certs-check -e "domain=abc.com bundle=/etc/ssl/certs/my-bundle.pem" -l test-server
 ```
 
 ### 3. Zmiana progu ostrzeżenia
 ```bash
 # Ostrzegaj jeśli certyfikat wygasa w ciągu 60 dni
-./run-automation.sh certs-check -e "domain=abc.com warn_days=60"
+./run-automation.sh certs-check -e "domain=abc.com warn_days=60" -l test-server
 ```
 
-### 4. Sprawdzenie wielu domen
-```bash
-# Uruchom dla każdej domeny osobno
-./run-automation.sh certs-check -e "domain=abc.com" -l prod-servers
-./run-automation.sh certs-check -e "domain=xyz.com" -l prod-servers
-```
-
-### 5. Sprawdzenie na wszystkich serwerach
+### 4. Sprawdzenie na wielu serwerach
 ```bash
 ./run-automation.sh certs-check -e "domain=company.com" -i inventory/production.yml
 ```
 
+### 5. Dry-run
+```bash
+./run-automation.sh certs-check -e "domain=abc.com" -l test-server -c
+```
+
+## Wyświetlane informacje
+
+Dla każdego znalezionego certyfikatu:
+- **CN (Common Name)** - nazwa główna certyfikatu
+- **Wystawca (Issuer)** - kto wystawił certyfikat
+- **Serial** - numer seryjny
+- **Ważny od / do** - daty ważności
+- **Pozostało dni** - ile dni do wygaśnięcia
+- **Status** - wygasły / wkrótce wygaśnie / OK
+- **SAN** - Subject Alternative Names
+- **Key Usage** - użycie klucza
+- **Algorytm** - algorytm podpisu
+
 ## Przykładowy output
 
 ```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    CERTYFIKATY DLA DOMENY: abc.com
-╠══════════════════════════════════════════════════════════════════════════════╣
+╔══════════════════════════════════════════════════════════════════════════════════════════╗
+║  🔍 ANALIZA CERTYFIKATÓW DLA: abc.com
+╠══════════════════════════════════════════════════════════════════════════════════════════╣
+║  📁 Bundle: /etc/pki/tls/certs/ca-bundle.crt
+║  📊 Certyfikatów w bundlu: 142
+║  🎯 Znalezionych dla domeny: 2
+╠══════════════════════════════════════════════════════════════════════════════════════════╣
 ║
-║  📄 PLIK: /etc/pki/tls/certs/wildcard.abc.com.crt
-║  ├── CN: *.abc.com
-║  ├── SAN: DNS:*.abc.com, DNS:abc.com
-║  ├── Wygasa: Dec 15 23:59:59 2025 GMT
-║  └── Pozostało: 312 dni ✅
+║  🎯 CERTYFIKAT #1
+║  ├── 👤 CN: *.abc.com
+║  ├── 🏢 Wystawca: DigiCert SHA2 Extended Validation Server CA
+║  ├── 🔢 Serial: 0A:1B:2C:3D:4E:5F
+║  ├── 📅 Ważny od: Jan 15 00:00:00 2024 GMT
+║  ├── 📅 Ważny do: Jan 15 23:59:59 2026 GMT
+║  ├── ⏳ Pozostało: 340 dni ✅
+║  ├── 🌐 SAN: DNS:*.abc.com, DNS:abc.com
+║  ├── 🔑 Key Usage: Digital Signature, Key Encipherment
+║  └── 🔐 Algorytm: sha256WithRSAEncryption
 ║
-║  📄 PLIK: /etc/pki/tls/certs/old-cert.crt
-║  ├── CN: app.abc.com
-║  ├── SAN: DNS:app.abc.com
-║  ├── Wygasa: Mar 01 12:00:00 2024 GMT
-║  └── Pozostało: -45 dni ⛔ WYGASŁ!
-║
-╚══════════════════════════════════════════════════════════════════════════════╝
+╚══════════════════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ## Statusy certyfikatów
 
-| Status | Opis |
-|--------|------|
-| ✅ | Certyfikat ważny, więcej niż `warn_days` do wygaśnięcia |
-| ⚠️ WKRÓTCE WYGAŚNIE! | Certyfikat wygasa w ciągu `warn_days` dni |
-| ⛔ WYGASŁ! | Certyfikat już wygasł |
+| Status | Ikona | Opis |
+|--------|-------|------|
+| VALID | ✅ | Certyfikat ważny, więcej niż `warn_days` do wygaśnięcia |
+| EXPIRING_SOON | ⚠️ | Certyfikat wygasa w ciągu `warn_days` dni |
+| EXPIRED | ⛔ | Certyfikat już wygasł |
 
 ## Jak to działa
 
-1. Moduł przeszukuje katalogi z certyfikatami
-2. Dla każdego pliku `.crt`, `.pem`, `.cert`, `.cer`:
-   - Sprawdza czy to certyfikat X.509
-   - Wyciąga CN i SAN
-   - Porównuje z podaną domeną (uwzględnia wildcard `*`)
-3. Wyświetla pasujące certyfikaty z datami wygaśnięcia
+1. **Rozdzielenie bundla** - plik PEM jest dzielony na pojedyncze certyfikaty (po znacznikach BEGIN/END CERTIFICATE)
+2. **Dopasowanie nazwy** - dla każdego certyfikatu sprawdzane jest:
+   - CN (Common Name) w Subject
+   - DNS entries w Subject Alternative Names
+   - Wildcard patterns (*.domain.com)
+3. **Analiza** - dla pasujących certyfikatów wyciągane są szczegóły przez openssl
+4. **Wyświetlenie** - czytelny raport z informacjami o certyfikatach
 
-## Wzorce dopasowania
+## Domyślne lokalizacje bundli
 
-Moduł szuka certyfikatów zawierających:
-- `*.domain.com` (wildcard)
-- `domain.com` (dokładne dopasowanie)
-- `subdomain.domain.com` (subdomeny)
+| System | Ścieżka |
+|--------|---------|
+| RHEL/CentOS | `/etc/pki/tls/certs/ca-bundle.crt` |
+| Debian/Ubuntu | `/etc/ssl/certs/ca-certificates.crt` |
+| Własne | Dowolna ścieżka do pliku PEM |
 
 ## Rozwiązywanie problemów
 
 ### Brak wyników
 - Sprawdź czy domena jest poprawna
-- Sprawdź czy certyfikaty są w standardowych lokalizacjach
-- Uruchom z verbose: `./run-automation.sh certs-check -e "domain=abc.com" -v`
+- Spróbuj użyć części nazwy (np. `example` zamiast `www.example.com`)
+- Sprawdź czy bundle zawiera szukane certyfikaty
+
+### Błąd "plik bundla nie istnieje"
+- Sprawdź ścieżkę do bundla
+- Na Debian/Ubuntu użyj: `bundle=/etc/ssl/certs/ca-certificates.crt`
 
 ### Błąd "openssl not found"
 ```bash
@@ -124,14 +135,5 @@ yum install openssl
 apt install openssl
 ```
 
-## Automatyzacja monitoringu
-
-Możesz użyć tego modułu w cron do regularnego sprawdzania certyfikatów:
-
-```bash
-# Sprawdzaj co tydzień i zapisuj wynik
-0 0 * * 0 /path/to/run-automation.sh certs-check -e "domain=abc.com" > /var/log/cert-check.log 2>&1
-```
-
-## Powiązane moduły
-- Brak powiązanych modułów
+## Powiązane
+- Oryginalny skrypt: `cert_info.sh` (bash-smieci)
