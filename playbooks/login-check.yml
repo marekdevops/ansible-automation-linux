@@ -1,0 +1,437 @@
+---
+# Moduł LOGIN-CHECK - Weryfikacja uprawnień logowania na serwer
+# Plik: playbooks/login-check.yml
+# Użycie: ./run-automation.sh login-check
+# Użycie: ./run-automation.sh login-check -e "show_system=true"
+# Użycie: ./run-automation.sh login-check -e "shell_filter=/bin/bash"
+
+- name: "LOGIN-CHECK MODULE - Weryfikacja uprawnień logowania na serwer"
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    # Pokaż konta systemowe (UID < 1000), domyślnie ukryte
+    login_show_system: "{{ show_system | default(false) | bool }}"
+    # Filtruj po konkretnym shellu (pusty = wszystkie aktywne shelle)
+    login_shell_filter: "{{ shell_filter | default('') }}"
+    # Minimalny UID do wyświetlenia (domyślnie 1000 = pomijaj systemowe)
+    login_min_uid: "{{ min_uid | default(1000) | int }}"
+    # Shelle uznawane za nieaktywne (brak możliwości logowania)
+    login_nologin_shells:
+      - /sbin/nologin
+      - /usr/sbin/nologin
+      - /bin/false
+      - /usr/bin/false
+
+  pre_tasks:
+    - name: "Wyświetl informacje o konfiguracji"
+      debug:
+        msg: |
+          === KONFIGURACJA LOGIN-CHECK ===
+          Host: {{ inventory_hostname }}
+          Pokaż konta systemowe (UID < {{ login_min_uid }}): {{ login_show_system }}
+          Filtr shella: {{ login_shell_filter | default('wszystkie aktywne', true) }}
+      tags: always
+
+  tasks:
+    # ===================================================================
+    # SEKCJA 1: Analiza /etc/passwd - użytkownicy lokalni
+    # ===================================================================
+    - name: "Pobierz zawartość /etc/passwd"
+      command: getent passwd
+      register: passwd_content
+      changed_when: false
+      tags: logincheck
+
+    - name: "Analizuj użytkowników z aktywnym shellem"
+      shell: |
+        #!/bin/bash
+
+        SHOW_SYSTEM="{{ login_show_system }}"
+        SHELL_FILTER="{{ login_shell_filter }}"
+        MIN_UID="{{ login_min_uid }}"
+        NOLOGIN_SHELLS="/sbin/nologin /usr/sbin/nologin /bin/false /usr/bin/false"
+
+        # Liczniki
+        total_users=0
+        active_users=0
+        system_active=0
+        locked_users=0
+
+        while IFS=: read -r username password uid gid gecos home shell; do
+            total_users=$((total_users + 1))
+
+            # Sprawdź czy shell jest aktywny
+            is_nologin=false
+            for ns in $NOLOGIN_SHELLS; do
+                if [ "$shell" = "$ns" ]; then
+                    is_nologin=true
+                    break
+                fi
+            done
+
+            # Pomiń użytkowników z nieaktywnym shellem
+            if [ "$is_nologin" = true ] || [ -z "$shell" ]; then
+                continue
+            fi
+
+            # Filtr shella
+            if [ -n "$SHELL_FILTER" ] && [ "$shell" != "$SHELL_FILTER" ]; then
+                continue
+            fi
+
+            # Sprawdź czy konto jest zablokowane (password starts with ! or *)
+            is_locked=false
+            shadow_entry=$(getent shadow "$username" 2>/dev/null)
+            if [ -n "$shadow_entry" ]; then
+                shadow_pass=$(echo "$shadow_entry" | cut -d: -f2)
+                case "$shadow_pass" in
+                    '!'*|'*'*|'!!'*)
+                        is_locked=true
+                        locked_users=$((locked_users + 1))
+                        ;;
+                esac
+            fi
+
+            # Rozróżnij konta systemowe i normalne
+            if [ "$uid" -lt "$MIN_UID" ]; then
+                system_active=$((system_active + 1))
+                if [ "$SHOW_SYSTEM" != "True" ] && [ "$SHOW_SYSTEM" != "true" ]; then
+                    continue
+                fi
+                user_type="SYSTEM"
+            else
+                user_type="USER"
+                active_users=$((active_users + 1))
+            fi
+
+            # Status konta
+            if [ "$is_locked" = true ]; then
+                lock_status="LOCKED"
+            else
+                lock_status="ACTIVE"
+            fi
+
+            # Pobierz grupy użytkownika
+            user_groups=$(id -nG "$username" 2>/dev/null | tr ' ' ',')
+
+            # Sprawdź ostatnie logowanie
+            last_login=$(lastlog -u "$username" 2>/dev/null | tail -1 | awk '{if ($2 == "**Never") print "NIGDY"; else if (NF > 3) print $4" "$5" "$6" "$9; else print "NIGDY"}')
+
+            # Sprawdź czy ma klucz SSH
+            has_ssh_key="NIE"
+            if [ -f "$home/.ssh/authorized_keys" ] && [ -s "$home/.ssh/authorized_keys" ]; then
+                ssh_key_count=$(grep -c "^ssh-\|^ecdsa-\|^sk-" "$home/.ssh/authorized_keys" 2>/dev/null || echo "0")
+                if [ "$ssh_key_count" -gt 0 ]; then
+                    has_ssh_key="TAK($ssh_key_count)"
+                fi
+            fi
+
+            echo "ENTRY|$user_type|$username|$uid|$shell|$lock_status|$home|$user_groups|$last_login|$has_ssh_key"
+        done < <(getent passwd)
+
+        echo "STATS_PASSWD|$total_users|$active_users|$system_active|$locked_users"
+      register: passwd_analysis
+      changed_when: false
+      tags: logincheck
+
+    # ===================================================================
+    # SEKCJA 2: Analiza realm permit - grupy LDAP/AD
+    # ===================================================================
+    - name: "Sprawdź czy realm jest zainstalowany"
+      command: which realm
+      register: realm_installed
+      changed_when: false
+      failed_when: false
+      tags: logincheck
+
+    - name: "Pobierz konfigurację realm"
+      shell: |
+        #!/bin/bash
+
+        if ! command -v realm &>/dev/null; then
+            echo "REALM_STATUS|NOT_INSTALLED"
+            exit 0
+        fi
+
+        realm_output=$(realm list 2>/dev/null)
+
+        if [ -z "$realm_output" ]; then
+            echo "REALM_STATUS|NOT_JOINED"
+            exit 0
+        fi
+
+        echo "REALM_STATUS|JOINED"
+
+        # Nazwa domeny
+        domain_name=$(echo "$realm_output" | head -1 | tr -d ' ')
+        echo "REALM_DOMAIN|$domain_name"
+
+        # Typ
+        realm_type=$(echo "$realm_output" | grep "type:" | awk '{print $2}')
+        echo "REALM_TYPE|$realm_type"
+
+        # Login policy
+        login_policy=$(echo "$realm_output" | grep "login-policy:" | awk '{print $2}')
+        echo "REALM_POLICY|$login_policy"
+
+        # Permitted logins (users)
+        permitted_users=$(echo "$realm_output" | grep "permitted-logins:" | sed 's/.*permitted-logins: //')
+        if [ -n "$permitted_users" ]; then
+            echo "REALM_PERMITTED_USERS|$permitted_users"
+        fi
+
+        # Permitted groups
+        permitted_groups=$(echo "$realm_output" | grep "permitted-groups:" | sed 's/.*permitted-groups: //')
+        if [ -n "$permitted_groups" ]; then
+            # Rozdziel grupy i wyświetl każdą osobno
+            IFS=',' read -ra groups <<< "$permitted_groups"
+            for grp in "${groups[@]}"; do
+                grp_clean=$(echo "$grp" | xargs)  # trim whitespace
+                if [ -n "$grp_clean" ]; then
+                    # Sprawdź ile osób jest w grupie (jeśli możliwe)
+                    member_count=$(getent group "$grp_clean" 2>/dev/null | awk -F: '{print $4}' | tr ',' '\n' | grep -c '.' || echo "?")
+                    echo "REALM_GROUP|$grp_clean|$member_count"
+                fi
+            done
+        fi
+
+        # Client software
+        client_sw=$(echo "$realm_output" | grep "client-software:" | awk '{print $2}')
+        echo "REALM_CLIENT|$client_sw"
+
+        # Server software
+        server_sw=$(echo "$realm_output" | grep "server-software:" | awk '{print $2}')
+        echo "REALM_SERVER|$server_sw"
+      register: realm_analysis
+      changed_when: false
+      tags: logincheck
+
+    # ===================================================================
+    # SEKCJA 3: Dodatkowe sprawdzenia bezpieczeństwa
+    # ===================================================================
+    - name: "Sprawdź konfigurację SSH"
+      shell: |
+        #!/bin/bash
+
+        SSHD_CONFIG="/etc/ssh/sshd_config"
+
+        if [ ! -f "$SSHD_CONFIG" ]; then
+            echo "SSH_CONFIG|NOT_FOUND"
+            exit 0
+        fi
+
+        echo "SSH_CONFIG|FOUND"
+
+        # PermitRootLogin
+        root_login=$(grep -i "^PermitRootLogin" "$SSHD_CONFIG" 2>/dev/null | awk '{print $2}' | head -1)
+        echo "SSH_ROOT_LOGIN|${root_login:-not-set}"
+
+        # PasswordAuthentication
+        pass_auth=$(grep -i "^PasswordAuthentication" "$SSHD_CONFIG" 2>/dev/null | awk '{print $2}' | head -1)
+        echo "SSH_PASS_AUTH|${pass_auth:-not-set}"
+
+        # AllowUsers
+        allow_users=$(grep -i "^AllowUsers" "$SSHD_CONFIG" 2>/dev/null | sed 's/^AllowUsers\s*//')
+        if [ -n "$allow_users" ]; then
+            echo "SSH_ALLOW_USERS|$allow_users"
+        fi
+
+        # AllowGroups
+        allow_groups=$(grep -i "^AllowGroups" "$SSHD_CONFIG" 2>/dev/null | sed 's/^AllowGroups\s*//')
+        if [ -n "$allow_groups" ]; then
+            echo "SSH_ALLOW_GROUPS|$allow_groups"
+        fi
+
+        # DenyUsers
+        deny_users=$(grep -i "^DenyUsers" "$SSHD_CONFIG" 2>/dev/null | sed 's/^DenyUsers\s*//')
+        if [ -n "$deny_users" ]; then
+            echo "SSH_DENY_USERS|$deny_users"
+        fi
+
+        # DenyGroups
+        deny_groups=$(grep -i "^DenyGroups" "$SSHD_CONFIG" 2>/dev/null | sed 's/^DenyGroups\s*//')
+        if [ -n "$deny_groups" ]; then
+            echo "SSH_DENY_GROUPS|$deny_groups"
+        fi
+
+        # MaxAuthTries
+        max_auth=$(grep -i "^MaxAuthTries" "$SSHD_CONFIG" 2>/dev/null | awk '{print $2}' | head -1)
+        echo "SSH_MAX_AUTH|${max_auth:-not-set}"
+      register: ssh_analysis
+      changed_when: false
+      tags: logincheck
+
+    # ===================================================================
+    # SEKCJA 4: Wyświetlenie wyników
+    # ===================================================================
+    - name: "Parsuj statystyki"
+      set_fact:
+        passwd_entries: "{{ passwd_analysis.stdout_lines | select('match', '^ENTRY\\|') | list }}"
+        passwd_stats: "{{ passwd_analysis.stdout_lines | select('match', '^STATS_PASSWD\\|') | first | default('STATS_PASSWD|0|0|0|0') }}"
+        realm_lines: "{{ realm_analysis.stdout_lines }}"
+        ssh_lines: "{{ ssh_analysis.stdout_lines }}"
+      tags: logincheck
+
+    - name: "Wyświetl raport uprawnień logowania"
+      debug:
+        msg: |
+          {% set stats = passwd_stats.split('|') %}
+          {% set total = stats[1] | default('0') %}
+          {% set active = stats[2] | default('0') %}
+          {% set sys_active = stats[3] | default('0') %}
+          {% set locked = stats[4] | default('0') %}
+          {% set realm_status = realm_lines | select('match', '^REALM_STATUS\\|') | first | default('REALM_STATUS|UNKNOWN') %}
+          {% set realm_st = realm_status.split('|')[1] %}
+
+          ╔══════════════════════════════════════════════════════════════════════════════════════════╗
+          ║  🔍 RAPORT UPRAWNIEŃ LOGOWANIA: {{ inventory_hostname }}
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ║
+          ║  📊 STATYSTYKI OGÓLNE
+          ║  ├── 👥 Wszystkich kont w systemie: {{ total }}
+          ║  ├── ✅ Konta użytkowników z aktywnym shellem (UID ≥ {{ login_min_uid }}): {{ active }}
+          ║  ├── ⚙️  Konta systemowe z aktywnym shellem (UID < {{ login_min_uid }}): {{ sys_active }}
+          ║  └── 🔒 Konta zablokowane: {{ locked }}
+          ║
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ║  👤 UŻYTKOWNICY LOKALNI Z MOŻLIWOŚCIĄ LOGOWANIA (/etc/passwd)
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          {% if passwd_entries | length == 0 %}
+          ║
+          ║  ℹ️  Brak użytkowników spełniających kryteria filtrowania
+          ║
+          {% else %}
+          {% for entry in passwd_entries %}
+          {% set parts = entry.split('|') %}
+          {% set user_type = parts[1] %}
+          {% set username = parts[2] %}
+          {% set uid = parts[3] %}
+          {% set shell = parts[4] %}
+          {% set lock_status = parts[5] %}
+          {% set home = parts[6] %}
+          {% set groups = parts[7] %}
+          {% set last_login = parts[8] %}
+          {% set has_ssh = parts[9] | default('NIE') %}
+          ║
+          ║  {% if user_type == 'SYSTEM' %}⚙️{% elif lock_status == 'LOCKED' %}🔒{% else %}👤{% endif %} {{ username }} (UID: {{ uid }})
+          ║  ├── 🐚 Shell: {{ shell }}
+          ║  ├── 📁 Home: {{ home }}
+          ║  ├── 👥 Grupy: {{ groups }}
+          ║  ├── 📅 Ostatnie logowanie: {{ last_login }}
+          ║  ├── 🔑 Klucze SSH: {{ has_ssh }}
+          ║  └── 🔐 Status: {% if lock_status == 'LOCKED' %}⚠️ ZABLOKOWANE{% else %}✅ AKTYWNE{% endif %}
+
+          {% endfor %}
+          {% endif %}
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ║  🌐 GRUPY LDAP/AD - REALM PERMIT
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          {% if realm_st == 'NOT_INSTALLED' %}
+          ║
+          ║  ℹ️  Realm nie jest zainstalowany - serwer nie jest podłączony do AD/LDAP
+          ║
+          {% elif realm_st == 'NOT_JOINED' %}
+          ║
+          ║  ℹ️  Realm zainstalowany, ale serwer nie jest przyłączony do domeny
+          ║
+          {% elif realm_st == 'JOINED' %}
+          {% set domain = realm_lines | select('match', '^REALM_DOMAIN\\|') | first | default('REALM_DOMAIN|?') %}
+          {% set policy = realm_lines | select('match', '^REALM_POLICY\\|') | first | default('REALM_POLICY|?') %}
+          {% set client = realm_lines | select('match', '^REALM_CLIENT\\|') | first | default('REALM_CLIENT|?') %}
+          {% set server = realm_lines | select('match', '^REALM_SERVER\\|') | first | default('REALM_SERVER|?') %}
+          {% set realm_groups = realm_lines | select('match', '^REALM_GROUP\\|') | list %}
+          {% set permitted_users = realm_lines | select('match', '^REALM_PERMITTED_USERS\\|') | first | default('') %}
+          ║
+          ║  🏢 Domena: {{ domain.split('|')[1] }}
+          ║  📋 Polityka logowania: {{ policy.split('|')[1] }}
+          ║  💻 Klient: {{ client.split('|')[1] }}
+          ║  🖥️  Serwer: {{ server.split('|')[1] }}
+          ║
+          {% if realm_groups | length > 0 %}
+          ║  📋 Grupy z uprawnieniem do logowania:
+          {% for grp_line in realm_groups %}
+          {% set grp_parts = grp_line.split('|') %}
+          ║  ├── 👥 {{ grp_parts[1] }} (członków: {{ grp_parts[2] }})
+          {% endfor %}
+          {% else %}
+          ║  ℹ️  Brak skonfigurowanych grup w realm permit
+          {% endif %}
+          ║
+          {% if permitted_users %}
+          ║  📋 Użytkownicy z uprawnieniem do logowania:
+          ║  └── {{ permitted_users.split('|')[1] }}
+          ║
+          {% endif %}
+          {% else %}
+          ║
+          ║  ⚠️ Nieznany status realm
+          ║
+          {% endif %}
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ║  🔒 KONFIGURACJA SSH
+          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          {% set ssh_config_line = ssh_lines | select('match', '^SSH_CONFIG\\|') | first | default('SSH_CONFIG|NOT_FOUND') %}
+          {% if ssh_config_line.split('|')[1] == 'NOT_FOUND' %}
+          ║
+          ║  ⚠️ Plik /etc/ssh/sshd_config nie został znaleziony
+          ║
+          {% else %}
+          {% set root_login = ssh_lines | select('match', '^SSH_ROOT_LOGIN\\|') | first | default('SSH_ROOT_LOGIN|not-set') %}
+          {% set pass_auth = ssh_lines | select('match', '^SSH_PASS_AUTH\\|') | first | default('SSH_PASS_AUTH|not-set') %}
+          {% set max_auth = ssh_lines | select('match', '^SSH_MAX_AUTH\\|') | first | default('SSH_MAX_AUTH|not-set') %}
+          {% set allow_users = ssh_lines | select('match', '^SSH_ALLOW_USERS\\|') | first | default('') %}
+          {% set allow_groups = ssh_lines | select('match', '^SSH_ALLOW_GROUPS\\|') | first | default('') %}
+          {% set deny_users = ssh_lines | select('match', '^SSH_DENY_USERS\\|') | first | default('') %}
+          {% set deny_groups = ssh_lines | select('match', '^SSH_DENY_GROUPS\\|') | first | default('') %}
+          ║
+          {% set rl_val = root_login.split('|')[1] %}
+          ║  ├── 🔐 PermitRootLogin: {{ rl_val }} {% if rl_val == 'yes' %}⛔ NIEBEZPIECZNE!{% elif rl_val == 'no' %}✅{% elif rl_val == 'prohibit-password' %}✅ (tylko klucze){% else %}⚠️ (nieokreślone){% endif %}
+
+          {% set pa_val = pass_auth.split('|')[1] %}
+          ║  ├── 🔑 PasswordAuthentication: {{ pa_val }} {% if pa_val == 'yes' %}⚠️{% elif pa_val == 'no' %}✅ (tylko klucze){% else %}⚠️ (nieokreślone){% endif %}
+
+          ║  ├── 🔢 MaxAuthTries: {{ max_auth.split('|')[1] }}
+          {% if allow_users %}
+          ║  ├── ✅ AllowUsers: {{ allow_users.split('|')[1] }}
+          {% endif %}
+          {% if allow_groups %}
+          ║  ├── ✅ AllowGroups: {{ allow_groups.split('|')[1] }}
+          {% endif %}
+          {% if deny_users %}
+          ║  ├── ⛔ DenyUsers: {{ deny_users.split('|')[1] }}
+          {% endif %}
+          {% if deny_groups %}
+          ║  ├── ⛔ DenyGroups: {{ deny_groups.split('|')[1] }}
+          {% endif %}
+          ║
+          {% endif %}
+          ╚══════════════════════════════════════════════════════════════════════════════════════════╝
+      tags: logincheck
+
+    - name: "Podsumowanie"
+      debug:
+        msg: |
+          {% set stats = passwd_stats.split('|') %}
+          === PODSUMOWANIE LOGIN-CHECK ===
+          Host: {{ inventory_hostname }}
+          Kont z aktywnym shellem (UID ≥ {{ login_min_uid }}): {{ stats[2] | default('0') }}
+          Kont systemowych z aktywnym shellem: {{ stats[3] | default('0') }}
+          Kont zablokowanych: {{ stats[4] | default('0') }}
+          {% set realm_status = realm_lines | select('match', '^REALM_STATUS\\|') | first | default('REALM_STATUS|UNKNOWN') %}
+          {% set realm_st = realm_status.split('|')[1] %}
+          Realm: {{ realm_st }}
+          {% if realm_st == 'JOINED' %}
+          {% set realm_groups = realm_lines | select('match', '^REALM_GROUP\\|') | list %}
+          Grup LDAP z dostępem: {{ realm_groups | length }}
+          {% endif %}
+
+          === ZARZĄDZANIE ===
+          Blokowanie użytkownika: usermod -L <username>
+          Odblokowanie użytkownika: usermod -U <username>
+          Zmiana shella: usermod -s /sbin/nologin <username>
+          Grupy realm: realm list
+          Dodaj grupę: realm permit -g <group>
+          Cofnij grupę: realm deny -g <group>
+      tags: logincheck

@@ -67,6 +67,7 @@ AKCJE:
     raportinfra              Raport infrastruktury serwerów (CPU, RAM, Dyski, OS)
     groupldap                Zezwalanie grupom AD/LDAP na logowanie (realm permit)
     certs-check              Sprawdzanie certyfikatów maszynowych dla domeny
+    login-check              Weryfikacja uprawnień logowania (passwd + realm)
     check                    Sprawdzenie konfiguracji
 
 PRZYKŁADY:
@@ -162,6 +163,15 @@ PRZYKŁADY:
 
     # Sprawdzenie certyfikatów z własnym bundlem
     $0 certs-check -e "domain=abc.com bundle=/path/to/bundle.pem" -l test-server
+
+    # Weryfikacja uprawnień logowania (passwd + realm)
+    $0 login-check
+
+    # Weryfikacja z kontami systemowymi
+    $0 login-check -e "show_system=true"
+
+    # Filtr po konkretnym shellu
+    $0 login-check -e "shell_filter=/bin/bash"
 EOF
 }
 
@@ -258,6 +268,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         certs-check)
             PLAYBOOK="playbooks/certs-check.yml"
+            shift
+            ;;
+        login-check)
+            PLAYBOOK="playbooks/login-check.yml"
             shift
             ;;
         check)
