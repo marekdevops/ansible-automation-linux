@@ -132,6 +132,8 @@
         done < <(getent passwd)
 
         echo "STATS_PASSWD|$total_users|$active_users|$system_active|$locked_users"
+      args:
+        executable: /bin/bash
       register: passwd_analysis
       changed_when: false
       tags: logincheck
