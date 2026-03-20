@@ -287,23 +287,23 @@
           {% set realm_status = realm_lines | select('match', '^REALM_STATUS\\|') | first | default('REALM_STATUS|UNKNOWN') %}
           {% set realm_st = realm_status.split('|')[1] %}
 
-          ╔══════════════════════════════════════════════════════════════════════════════════════════╗
-          ║  🔍 RAPORT UPRAWNIEŃ LOGOWANIA: {{ inventory_hostname }}
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
-          ║
-          ║  📊 STATYSTYKI OGÓLNE
-          ║  ├── 👥 Wszystkich kont w systemie: {{ total }}
-          ║  ├── ✅ Konta użytkowników z aktywnym shellem (UID ≥ {{ login_min_uid }}): {{ active }}
-          ║  ├── ⚙️  Konta systemowe z aktywnym shellem (UID < {{ login_min_uid }}): {{ sys_active }}
-          ║  └── 🔒 Konta zablokowane: {{ locked }}
-          ║
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
-          ║  👤 UŻYTKOWNICY LOKALNI Z MOŻLIWOŚCIĄ LOGOWANIA (/etc/passwd)
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ============================================================================
+            RAPORT UPRAWNIEN LOGOWANIA: {{ inventory_hostname }}
+          ============================================================================
+
+            STATYSTYKI OGOLNE
+            +-- Wszystkich kont w systemie: {{ total }}
+            +-- Konta uzytkownikow z aktywnym shellem (UID >= {{ login_min_uid }}): {{ active }}
+            +-- Konta systemowe z aktywnym shellem (UID < {{ login_min_uid }}): {{ sys_active }}
+            +-- Konta zablokowane: {{ locked }}
+
+          ============================================================================
+            UZYTKOWNICY LOKALNI Z MOZLIWOSCIA LOGOWANIA (/etc/passwd)
+          ============================================================================
           {% if passwd_entries | length == 0 %}
-          ║
-          ║  ℹ️  Brak użytkowników spełniających kryteria filtrowania
-          ║
+
+            [INFO] Brak uzytkownikow spelniajacych kryteria filtrowania
+
           {% else %}
           {% for entry in passwd_entries %}
           {% set parts = entry.split('|') %}
@@ -316,28 +316,28 @@
           {% set groups = parts[7] %}
           {% set last_login = parts[8] %}
           {% set has_ssh = parts[9] | default('NIE') %}
-          ║
-          ║  {% if user_type == 'SYSTEM' %}⚙️{% elif lock_status == 'LOCKED' %}🔒{% else %}👤{% endif %} {{ username }} (UID: {{ uid }})
-          ║  ├── 🐚 Shell: {{ shell }}
-          ║  ├── 📁 Home: {{ home }}
-          ║  ├── 👥 Grupy: {{ groups }}
-          ║  ├── 📅 Ostatnie logowanie: {{ last_login }}
-          ║  ├── 🔑 Klucze SSH: {{ has_ssh }}
-          ║  └── 🔐 Status: {% if lock_status == 'LOCKED' %}⚠️ ZABLOKOWANE{% else %}✅ AKTYWNE{% endif %}
+
+            [{% if user_type == 'SYSTEM' %}SYS{% elif lock_status == 'LOCKED' %}LCK{% else %}USR{% endif %}] {{ username }} (UID: {{ uid }})
+              +-- Shell:             {{ shell }}
+              +-- Home:              {{ home }}
+              +-- Grupy:             {{ groups }}
+              +-- Ostatnie logowanie: {{ last_login }}
+              +-- Klucze SSH:        {{ has_ssh }}
+              +-- Status:            {% if lock_status == 'LOCKED' %}[!] ZABLOKOWANE{% else %}[OK] AKTYWNE{% endif %}
 
           {% endfor %}
           {% endif %}
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
-          ║  🌐 GRUPY LDAP/AD - REALM PERMIT
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ============================================================================
+            GRUPY LDAP/AD - REALM PERMIT
+          ============================================================================
           {% if realm_st == 'NOT_INSTALLED' %}
-          ║
-          ║  ℹ️  Realm nie jest zainstalowany - serwer nie jest podłączony do AD/LDAP
-          ║
+
+            [INFO] Realm nie jest zainstalowany - serwer nie jest podlaczony do AD/LDAP
+
           {% elif realm_st == 'NOT_JOINED' %}
-          ║
-          ║  ℹ️  Realm zainstalowany, ale serwer nie jest przyłączony do domeny
-          ║
+
+            [INFO] Realm zainstalowany, ale serwer nie jest przylaczony do domeny
+
           {% elif realm_st == 'JOINED' %}
           {% set domain = realm_lines | select('match', '^REALM_DOMAIN\\|') | first | default('REALM_DOMAIN|?') %}
           {% set policy = realm_lines | select('match', '^REALM_POLICY\\|') | first | default('REALM_POLICY|?') %}
@@ -345,40 +345,40 @@
           {% set server = realm_lines | select('match', '^REALM_SERVER\\|') | first | default('REALM_SERVER|?') %}
           {% set realm_groups = realm_lines | select('match', '^REALM_GROUP\\|') | list %}
           {% set permitted_users = realm_lines | select('match', '^REALM_PERMITTED_USERS\\|') | first | default('') %}
-          ║
-          ║  🏢 Domena: {{ domain.split('|')[1] }}
-          ║  📋 Polityka logowania: {{ policy.split('|')[1] }}
-          ║  💻 Klient: {{ client.split('|')[1] }}
-          ║  🖥️  Serwer: {{ server.split('|')[1] }}
-          ║
+
+            Domena:             {{ domain.split('|')[1] }}
+            Polityka logowania: {{ policy.split('|')[1] }}
+            Klient:             {{ client.split('|')[1] }}
+            Serwer:             {{ server.split('|')[1] }}
+
           {% if realm_groups | length > 0 %}
-          ║  📋 Grupy z uprawnieniem do logowania:
+            Grupy z uprawnieniem do logowania:
           {% for grp_line in realm_groups %}
           {% set grp_parts = grp_line.split('|') %}
-          ║  ├── 👥 {{ grp_parts[1] }} (członków: {{ grp_parts[2] }})
+              +-- {{ grp_parts[1] }}  (czlonkow: {{ grp_parts[2] }})
           {% endfor %}
           {% else %}
-          ║  ℹ️  Brak skonfigurowanych grup w realm permit
+            [INFO] Brak skonfigurowanych grup w realm permit
           {% endif %}
-          ║
+
           {% if permitted_users %}
-          ║  📋 Użytkownicy z uprawnieniem do logowania:
-          ║  └── {{ permitted_users.split('|')[1] }}
-          ║
+            Uzytkownicy z uprawnieniem do logowania:
+              +-- {{ permitted_users.split('|')[1] }}
+
           {% endif %}
           {% else %}
-          ║
-          ║  ⚠️ Nieznany status realm
-          ║
+
+            [WARN] Nieznany status realm
+
           {% endif %}
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
-          ║  🔒 KONFIGURACJA SSH
-          ╠══════════════════════════════════════════════════════════════════════════════════════════╣
+          ============================================================================
+            KONFIGURACJA SSH
+          ============================================================================
           {% set ssh_config_line = ssh_lines | select('match', '^SSH_CONFIG\\|') | first | default('SSH_CONFIG|NOT_FOUND') %}
           {% if ssh_config_line.split('|')[1] == 'NOT_FOUND' %}
-          ║
-          ║  ⚠️ Plik /etc/ssh/sshd_config nie został znaleziony
-          ║
+
+            [WARN] Plik /etc/ssh/sshd_config nie zostal znaleziony
+
           {% else %}
           {% set root_login = ssh_lines | select('match', '^SSH_ROOT_LOGIN\\|') | first | default('SSH_ROOT_LOGIN|not-set') %}
           {% set pass_auth = ssh_lines | select('match', '^SSH_PASS_AUTH\\|') | first | default('SSH_PASS_AUTH|not-set') %}
@@ -387,29 +387,29 @@
           {% set allow_groups = ssh_lines | select('match', '^SSH_ALLOW_GROUPS\\|') | first | default('') %}
           {% set deny_users = ssh_lines | select('match', '^SSH_DENY_USERS\\|') | first | default('') %}
           {% set deny_groups = ssh_lines | select('match', '^SSH_DENY_GROUPS\\|') | first | default('') %}
-          ║
+
           {% set rl_val = root_login.split('|')[1] %}
-          ║  ├── 🔐 PermitRootLogin: {{ rl_val }} {% if rl_val == 'yes' %}⛔ NIEBEZPIECZNE!{% elif rl_val == 'no' %}✅{% elif rl_val == 'prohibit-password' %}✅ (tylko klucze){% else %}⚠️ (nieokreślone){% endif %}
+            +-- PermitRootLogin:        {{ rl_val }}  {% if rl_val == 'yes' %}[!!!] NIEBEZPIECZNE{% elif rl_val == 'no' %}[OK]{% elif rl_val == 'prohibit-password' %}[OK] tylko klucze{% else %}[?] nieokreslone{% endif %}
 
           {% set pa_val = pass_auth.split('|')[1] %}
-          ║  ├── 🔑 PasswordAuthentication: {{ pa_val }} {% if pa_val == 'yes' %}⚠️{% elif pa_val == 'no' %}✅ (tylko klucze){% else %}⚠️ (nieokreślone){% endif %}
+            +-- PasswordAuthentication: {{ pa_val }}  {% if pa_val == 'yes' %}[!] wlaczone{% elif pa_val == 'no' %}[OK] tylko klucze{% else %}[?] nieokreslone{% endif %}
 
-          ║  ├── 🔢 MaxAuthTries: {{ max_auth.split('|')[1] }}
+            +-- MaxAuthTries:           {{ max_auth.split('|')[1] }}
           {% if allow_users %}
-          ║  ├── ✅ AllowUsers: {{ allow_users.split('|')[1] }}
+            +-- AllowUsers:             {{ allow_users.split('|')[1] }}
           {% endif %}
           {% if allow_groups %}
-          ║  ├── ✅ AllowGroups: {{ allow_groups.split('|')[1] }}
+            +-- AllowGroups:            {{ allow_groups.split('|')[1] }}
           {% endif %}
           {% if deny_users %}
-          ║  ├── ⛔ DenyUsers: {{ deny_users.split('|')[1] }}
+            +-- DenyUsers:              {{ deny_users.split('|')[1] }}
           {% endif %}
           {% if deny_groups %}
-          ║  ├── ⛔ DenyGroups: {{ deny_groups.split('|')[1] }}
+            +-- DenyGroups:             {{ deny_groups.split('|')[1] }}
           {% endif %}
-          ║
+
           {% endif %}
-          ╚══════════════════════════════════════════════════════════════════════════════════════════╝
+          ============================================================================
       tags: logincheck
 
     - name: "Podsumowanie"
@@ -418,7 +418,7 @@
           {% set stats = passwd_stats.split('|') %}
           === PODSUMOWANIE LOGIN-CHECK ===
           Host: {{ inventory_hostname }}
-          Kont z aktywnym shellem (UID ≥ {{ login_min_uid }}): {{ stats[2] | default('0') }}
+          Kont z aktywnym shellem (UID >= {{ login_min_uid }}): {{ stats[2] | default('0') }}
           Kont systemowych z aktywnym shellem: {{ stats[3] | default('0') }}
           Kont zablokowanych: {{ stats[4] | default('0') }}
           {% set realm_status = realm_lines | select('match', '^REALM_STATUS\\|') | first | default('REALM_STATUS|UNKNOWN') %}
@@ -426,14 +426,14 @@
           Realm: {{ realm_st }}
           {% if realm_st == 'JOINED' %}
           {% set realm_groups = realm_lines | select('match', '^REALM_GROUP\\|') | list %}
-          Grup LDAP z dostępem: {{ realm_groups | length }}
+          Grup LDAP z dostepem: {{ realm_groups | length }}
           {% endif %}
 
-          === ZARZĄDZANIE ===
-          Blokowanie użytkownika: usermod -L <username>
-          Odblokowanie użytkownika: usermod -U <username>
-          Zmiana shella: usermod -s /sbin/nologin <username>
-          Grupy realm: realm list
-          Dodaj grupę: realm permit -g <group>
-          Cofnij grupę: realm deny -g <group>
+          === ZARZADZANIE ===
+          Blokowanie uzytkownika:   usermod -L <username>
+          Odblokowanie uzytkownika: usermod -U <username>
+          Zmiana shella:            usermod -s /sbin/nologin <username>
+          Grupy realm:              realm list
+          Dodaj grupe:              realm permit -g <group>
+          Cofnij grupe:             realm deny -g <group>
       tags: logincheck
