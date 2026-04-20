@@ -5,8 +5,8 @@
 # This file allows {{ sudoers_subject }} to switch to user {{ sudoers_target_user }}
 #
 
-# Switch to {{ sudoers_target_user }} privilege
-{{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=({{ sudoers_target_user }}) NOPASSWD: ALL
+# Switch to {{ sudoers_target_user }} via sudo su -
+{{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}
 {% else %}
 # This file allows {{ sudoers_subject }} to execute specific commands without password
 #
