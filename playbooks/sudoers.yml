@@ -123,7 +123,7 @@
         msg: |
           === PRZEŁĄCZENIE NA UŻYTKOWNIKA ===
           Grupa {{ sudoers_subject }} będzie mogła przełączyć się na użytkownika {{ sudoers_target_user }}
-          Wpis sudoers: {{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}
+          Wpis sudoers: {{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}, /usr/bin/su - {{ sudoers_target_user }}
       when: sudoers_target_user_mode
       tags: sudoers
 

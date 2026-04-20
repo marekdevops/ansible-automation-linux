@@ -6,7 +6,7 @@
 #
 
 # Switch to {{ sudoers_target_user }} via sudo su -
-{{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}
+{{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}, /usr/bin/su - {{ sudoers_target_user }}
 {% else %}
 # This file allows {{ sudoers_subject }} to execute specific commands without password
 #
