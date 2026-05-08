@@ -226,6 +226,20 @@
           loop: "{{ mount_points }}"
           when: not ansible_check_mode
 
+        - name: "systemctl daemon-reload (regeneracja unitów .mount z fstab)"
+          systemd:
+            daemon_reload: yes
+          when: not ansible_check_mode
+
+        - name: "Zamontuj nowe wolumeny"
+          mount:
+            path: "{{ item }}"
+            src: "/dev/{{ default_vg_name }}/{{ item.replace('/', '').replace('-', '_') }}-lv"
+            fstype: "{{ filesystem_type }}"
+            state: mounted
+          loop: "{{ mount_points }}"
+          when: not ansible_check_mode
+
         - name: "Sprawdź utworzone wolumeny"
           shell: |
             echo "=== UTWORZONE WOLUMENY ==="
