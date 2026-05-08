@@ -194,12 +194,12 @@
               Punkty montowania: {{ mount_points | join(', ') }}
               System plików: {{ filesystem_type }}
 
+        - name: "Utwórz Volume Group"
+          shell: vgcreate {{ default_vg_name }} {{ target_disk }}1
+          when: not ansible_check_mode
+
         - name: "Utwórz Logical Volumes"
-          shell: |
-            {% if loop.first %}
-            vgcreate {{ default_vg_name }} {{ target_disk }}1
-            {% endif %}
-            lvcreate -n {{ item.replace('/', '').replace('-', '_') }}-lv -l +{{ (100 / mount_points|length) | round | int }}%FREE {{ default_vg_name }}
+          shell: lvcreate -n {{ item.replace('/', '').replace('-', '_') }}-lv -l {{ (100 / mount_points|length) | round | int }}%FREE {{ default_vg_name }}
           loop: "{{ mount_points }}"
           when: not ansible_check_mode
 
