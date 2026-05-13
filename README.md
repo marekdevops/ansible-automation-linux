@@ -232,6 +232,12 @@ ansible-playbook -i inventory/hosts.yml playbooks/services/web-server.yml \
 
 # Operatore backupów
 ./run-automation.sh sudoers -e "user=backup commands_file=backup_commands"
+
+# Tymczasowe pełne uprawnienia root NOPASSWD (np. na czas incydentu)
+./run-automation.sh sudoers -e "task_action=grant user=jasiu"
+
+# Odebranie tych uprawnień
+./run-automation.sh sudoers -e "task_action=revoke user=jasiu"
 ```
 
 ### 5. Konfiguracja monitoringu

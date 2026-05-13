@@ -29,6 +29,7 @@ Moduł `sudoers` służy do konfiguracji uprawnień sudo dla użytkowników i gr
 - `commands_file` - nazwa pliku z komendami (domyślnie: `sudo_commands`)
 - `priority` - priorytet pliku sudoers (domyślnie: `98`)
 - `target_user` - użytkownik docelowy dla przełączenia (pomija `commands_file`)
+- `task_action` - akcja: `configure` (domyślna, plik z szablonu komend), `grant` (pełne root NOPASSWD: ALL), `revoke` (odebranie pełnego roota)
 
 ## Jak to działa
 
@@ -124,6 +125,38 @@ Wygeneruje plik `/etc/sudoers.d/98-IT_Support`:
 ./run-automation.sh sudoers -e "groupldap=IT_Support target_user=appuser" -c
 ```
 
+### 8. Tymczasowe nadanie / odebranie pełnych uprawnień root (`task_action=grant|revoke`)
+
+Akcja `grant` tworzy plik `/etc/sudoers.d/98-UŻYTKOWNIK` z wpisem dającym pełnego roota bez hasła:
+```
+UŻYTKOWNIK ALL=(ALL) NOPASSWD: ALL
+```
+Akcja `revoke` usuwa ten plik. Jeśli plik nie istnieje, `revoke` kończy się sukcesem bez zmian (idempotentnie).
+
+```bash
+# Nadanie pełnego roota użytkownikowi jasiu (np. na czas incydentu)
+./run-automation.sh sudoers -e "task_action=grant user=jasiu"
+
+# Odebranie - usuwa /etc/sudoers.d/98-jasiu
+./run-automation.sh sudoers -e "task_action=revoke user=jasiu"
+
+# Dry-run obu akcji
+./run-automation.sh sudoers -e "task_action=grant user=jasiu" -c
+./run-automation.sh sudoers -e "task_action=revoke user=jasiu" -c
+```
+
+**Ograniczenia:**
+- `task_action=grant|revoke` obsługuje **tylko `user=`** - parametry `group=` i `groupldap=` są blokowane (walidacja zwróci błąd).
+- `grant` sprawdza istnienie użytkownika w systemie (przez `getent passwd`).
+- `revoke` pomija sprawdzanie - można odebrać uprawnienia użytkownikowi, który został już usunięty.
+- Plik tworzony przez `grant` jest walidowany przez `visudo -cf` przed zapisem.
+
+**Kiedy używać:**
+- Tymczasowe podniesienie uprawnień (incydent, migracja, jednorazowe zadanie administracyjne).
+- Trzymanie pełnego roota poza standardowym szablonem komend - łatwe do śledzenia (osobny wpis) i szybkiego odebrania jedną komendą.
+
+> UWAGA bezpieczeństwa: wpis `ALL=(ALL) NOPASSWD: ALL` to pełny root bez hasła. Stosuj świadomie i zawsze planuj `revoke` po zakończeniu pracy.
+
 ## Różnica między `group` a `groupldap`
 
 | Parametr | Walidacja | Użycie |
@@ -189,8 +222,11 @@ ls -la /etc/sudoers.d/
 
 ### Usuwanie uprawnień
 ```bash
-# Usuń plik sudoers dla użytkownika
+# Ręcznie - usuń plik sudoers dla użytkownika
 sudo rm /etc/sudoers.d/98-UŻYTKOWNIK
+
+# Przez moduł (dla wpisów utworzonych przez task_action=grant)
+./run-automation.sh sudoers -e "task_action=revoke user=UŻYTKOWNIK"
 ```
 
 ### Edycja uprawnień
