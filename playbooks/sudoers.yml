@@ -5,6 +5,8 @@
 #        ./run-automation.sh sudoers -e "group=nazwa_grupy"      (grupa lokalna - sprawdza czy istnieje)
 #        ./run-automation.sh sudoers -e "groupldap=nazwa_grupy"  (grupa AD/LDAP - bez sprawdzania)
 #        ./run-automation.sh sudoers -e "groupldap=nazwa_grupy target_user=uzytkownik"  (przełączenie na użytkownika)
+#        ./run-automation.sh sudoers -e "task_action=grant user=nazwa"   (tymczasowe pełne root NOPASSWD: ALL)
+#        ./run-automation.sh sudoers -e "task_action=revoke user=nazwa"  (odebranie pełnego roota)
 
 - name: "SUDOERS MODULE - Konfiguracja uprawnień sudo"
   hosts: all
@@ -12,6 +14,9 @@
   become: true
 
   vars:
+    # Akcja: configure (domyślnie, plik z szablonu komend), grant, revoke
+    sudoers_action: "{{ task_action | default('configure') }}"
+
     # Podstawowe zmienne - użytkownik lub grupa
     sudoers_user: "{{ user | default('') }}"
     sudoers_group: "{{ group | default('') }}"
@@ -44,6 +49,17 @@
       when: sudoers_user == "" and sudoers_group == "" and sudoers_group_ldap == ""
       tags: always
 
+    - name: "Walidacja akcji grant/revoke: wymagany user="
+      fail:
+        msg: |
+          Akcja '{{ sudoers_action }}' obsługuje tylko pojedynczego użytkownika.
+          Użyj: ./run-automation.sh sudoers -e "task_action={{ sudoers_action }} user=nazwa_uzytkownika"
+          Parametry group= / groupldap= nie są wspierane dla tej akcji.
+      when:
+        - sudoers_action in ['grant', 'revoke']
+        - sudoers_user == "" or sudoers_group != "" or sudoers_group_ldap != ""
+      tags: always
+
     - name: "Sprawdź czy użytkownik istnieje w systemie"
       getent:
         database: passwd
@@ -51,7 +67,9 @@
       register: user_exists_check
       failed_when: user_exists_check.failed and not ansible_check_mode
       ignore_errors: "{{ ansible_check_mode }}"
-      when: sudoers_mode == 'user'
+      when:
+        - sudoers_mode == 'user'
+        - sudoers_action != 'revoke'
       tags: always
 
     - name: "Sprawdź czy grupa lokalna istnieje w systemie"
@@ -74,9 +92,14 @@
       debug:
         msg: |
           === KONFIGURACJA SUDOERS ===
+          Akcja: {{ sudoers_action | upper }}
           Tryb: {{ sudoers_mode }}{{ ' (AD/LDAP)' if sudoers_mode == 'groupldap' else '' }}{{ ' -> przełączenie na użytkownika' if sudoers_target_user_mode else '' }}
           {{ 'Grupa' if sudoers_mode in ['group', 'groupldap'] else 'Użytkownik' }}: {{ sudoers_subject }}
-          {% if sudoers_target_user_mode %}
+          {% if sudoers_action == 'grant' %}
+          >>> NADANIE pełnych uprawnień root NOPASSWD: ALL
+          {% elif sudoers_action == 'revoke' %}
+          >>> ODEBRANIE pełnych uprawnień root (usunięcie pliku)
+          {% elif sudoers_target_user_mode %}
           Użytkownik docelowy: {{ sudoers_target_user }}
           {% else %}
           Szablon komend: {{ sudoers_commands_file }}
@@ -95,121 +118,168 @@
         mode: '0750'
       tags: sudoers
 
-    - name: "Wczytaj komendy z pliku szablonu"
-      set_fact:
-        sudoers_commands: "{{ lookup('file', commands_template_path).split('\n') }}"
-      when: not sudoers_target_user_mode
+    # === GRANT: Pełne uprawnienia root NOPASSWD: ALL ===
+    - block:
+        - name: "GRANT: Utwórz plik sudoers z pełnymi uprawnieniami root"
+          copy:
+            content: |
+              # Tymczasowe pełne uprawnienia root NOPASSWD dla {{ sudoers_user }}
+              # Utworzono: {{ ansible_date_time.iso8601 }}
+              {{ sudoers_user }} ALL=(ALL) NOPASSWD: ALL
+            dest: "{{ sudoers_file_path }}"
+            owner: root
+            group: root
+            mode: '0440'
+            validate: 'visudo -cf %s'
+            backup: yes
+          register: grant_result
+
+        - name: "GRANT: Wyświetl podsumowanie"
+          debug:
+            msg: |
+              === NADANO PEŁNE UPRAWNIENIA ROOT ===
+              Użytkownik: {{ sudoers_user }}
+              Plik: {{ sudoers_file_path }}
+              Wpis: {{ sudoers_user }} ALL=(ALL) NOPASSWD: ALL
+              Status: {{ 'Utworzony/zaktualizowany' if grant_result.changed else 'Już istniał' }}
+
+              Aby odebrać uprawnienia:
+              ./run-automation.sh sudoers -e "task_action=revoke user={{ sudoers_user }}"
+      when: sudoers_action == 'grant'
       tags: sudoers
 
-    - name: "Wyświetl komendy do skonfigurowania"
-      debug:
-        msg: |
-          === KOMENDY SUDO DLA {{ sudoers_subject | upper }} ({{ sudoers_mode | upper }}) ===
-          {% for line in sudoers_commands %}
-          {% if line.strip() and not line.strip().startswith('#') %}
-          {% set commands = line.split(';') %}
-          {% for command in commands %}
-          {% if command.strip() %}
-          - {{ command.strip() }}
-          {% endif %}
-          {% endfor %}
-          {% endif %}
-          {% endfor %}
-      when: not sudoers_target_user_mode
+    # === REVOKE: Odebranie pełnych uprawnień root ===
+    - block:
+        - name: "REVOKE: Sprawdź czy plik istnieje"
+          stat:
+            path: "{{ sudoers_file_path }}"
+          register: revoke_file_check
+
+        - name: "REVOKE: Usuń plik sudoers"
+          file:
+            path: "{{ sudoers_file_path }}"
+            state: absent
+          register: revoke_result
+
+        - name: "REVOKE: Wyświetl podsumowanie"
+          debug:
+            msg: |
+              === ODEBRANO UPRAWNIENIA ROOT ===
+              Użytkownik: {{ sudoers_user }}
+              Plik: {{ sudoers_file_path }}
+              Status: {{ 'Usunięty' if revoke_file_check.stat.exists else 'Nie istniał - nic do zrobienia' }}
+      when: sudoers_action == 'revoke'
       tags: sudoers
 
-    - name: "Info: Tryb przełączenia na użytkownika"
-      debug:
-        msg: |
-          === PRZEŁĄCZENIE NA UŻYTKOWNIKA ===
-          Grupa {{ sudoers_subject }} będzie mogła przełączyć się na użytkownika {{ sudoers_target_user }}
-          Wpis sudoers: {{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}, /usr/bin/su - {{ sudoers_target_user }}
-      when: sudoers_target_user_mode
-      tags: sudoers
+    # === CONFIGURE: Standardowy tryb (komendy z szablonu) ===
+    - block:
+        - name: "Wczytaj komendy z pliku szablonu"
+          set_fact:
+            sudoers_commands: "{{ lookup('file', commands_template_path).split('\n') }}"
+          when: not sudoers_target_user_mode
 
-    - name: "Utwórz backup istniejącego pliku sudoers (jeśli istnieje)"
-      copy:
-        src: "{{ sudoers_file_path }}"
-        dest: "{{ sudoers_file_path }}.backup.{{ ansible_date_time.epoch }}"
-        remote_src: yes
-        owner: root
-        group: root
-        mode: '0440'
-      when: ansible_check_mode == false
-      failed_when: false
-      tags: sudoers
+        - name: "Wyświetl komendy do skonfigurowania"
+          debug:
+            msg: |
+              === KOMENDY SUDO DLA {{ sudoers_subject | upper }} ({{ sudoers_mode | upper }}) ===
+              {% for line in sudoers_commands %}
+              {% if line.strip() and not line.strip().startswith('#') %}
+              {% set commands = line.split(';') %}
+              {% for command in commands %}
+              {% if command.strip() %}
+              - {{ command.strip() }}
+              {% endif %}
+              {% endfor %}
+              {% endif %}
+              {% endfor %}
+          when: not sudoers_target_user_mode
 
-    - name: "Wygeneruj plik sudoers dla użytkownika"
-      template:
-        src: "{{ playbook_dir }}/../templates/sudoers_user.j2"
-        dest: "{{ sudoers_file_path }}"
-        owner: root
-        group: root
-        mode: '0440'
-        validate: 'visudo -cf %s'
-        backup: yes
-      register: sudoers_created
-      tags: sudoers
+        - name: "Info: Tryb przełączenia na użytkownika"
+          debug:
+            msg: |
+              === PRZEŁĄCZENIE NA UŻYTKOWNIKA ===
+              Grupa {{ sudoers_subject }} będzie mogła przełączyć się na użytkownika {{ sudoers_target_user }}
+              Wpis sudoers: {{ sudoers_subject_prefix }}{{ sudoers_subject }} ALL=(root) NOPASSWD: /bin/su - {{ sudoers_target_user }}, /usr/bin/su - {{ sudoers_target_user }}
+          when: sudoers_target_user_mode
 
-    - name: "Sprawdź składnię wszystkich plików sudoers"
-      command: visudo -c
-      register: visudo_check
-      changed_when: false
-      failed_when: visudo_check.rc != 0
-      when: not ansible_check_mode
-      tags: sudoers
+        - name: "Utwórz backup istniejącego pliku sudoers (jeśli istnieje)"
+          copy:
+            src: "{{ sudoers_file_path }}"
+            dest: "{{ sudoers_file_path }}.backup.{{ ansible_date_time.epoch }}"
+            remote_src: yes
+            owner: root
+            group: root
+            mode: '0440'
+          when: ansible_check_mode == false
+          failed_when: false
 
-    - name: "Wyświetl zawartość utworzonego pliku"
-      slurp:
-        src: "{{ sudoers_file_path }}"
-      register: sudoers_file_content
-      when: not ansible_check_mode
-      tags: sudoers
+        - name: "Wygeneruj plik sudoers dla użytkownika"
+          template:
+            src: "{{ playbook_dir }}/../templates/sudoers_user.j2"
+            dest: "{{ sudoers_file_path }}"
+            owner: root
+            group: root
+            mode: '0440'
+            validate: 'visudo -cf %s'
+            backup: yes
+          register: sudoers_created
 
-    - name: "Pokaż zawartość pliku sudoers"
-      debug:
-        msg: |
-          === ZAWARTOŚĆ PLIKU {{ sudoers_file_path }} ===
-          {{ sudoers_file_content.content | b64decode if not ansible_check_mode else 'Dry-run - plik nie został utworzony' }}
-      tags: sudoers
+        - name: "Sprawdź składnię wszystkich plików sudoers"
+          command: visudo -c
+          register: visudo_check
+          changed_when: false
+          failed_when: visudo_check.rc != 0
+          when: not ansible_check_mode
 
-    - name: "Test uprawnień sudo dla użytkownika"
-      shell: |
-        # Sprawdź czy użytkownik może używać sudo -l
-        sudo -l -U {{ sudoers_subject }} | grep -E "(NOPASSWD|{{ sudoers_subject }})" || echo "Brak uprawnień"
-      register: sudo_test
-      changed_when: false
-      failed_when: false
-      when: sudoers_mode == 'user'
-      tags: sudoers
+        - name: "Wyświetl zawartość utworzonego pliku"
+          slurp:
+            src: "{{ sudoers_file_path }}"
+          register: sudoers_file_content
+          when: not ansible_check_mode
 
-    - name: "Wyświetl podsumowanie"
-      debug:
-        msg: |
-          === PODSUMOWANIE KONFIGURACJI SUDOERS ===
-          Tryb: {{ sudoers_mode }}{{ ' (AD/LDAP)' if sudoers_mode == 'groupldap' else '' }}{{ ' -> przełączenie na użytkownika' if sudoers_target_user_mode else '' }}
-          {{ 'Grupa' if sudoers_mode in ['group', 'groupldap'] else 'Użytkownik' }}: {{ sudoers_subject }}
-          {% if sudoers_target_user_mode %}
-          Użytkownik docelowy: {{ sudoers_target_user }}
-          {% endif %}
-          Plik sudoers: {{ sudoers_file_path }}
-          Status: {{ 'Dry-run - zmiany nie zostały zastosowane' if ansible_check_mode else ('Utworzony' if sudoers_created.changed else 'Już istniał') }}
-          Walidacja: {{ 'Pomyślna' if (visudo_check is defined and visudo_check.rc is defined and visudo_check.rc == 0) else ('Pominięta' if ansible_check_mode else 'Błąd') }}
+        - name: "Pokaż zawartość pliku sudoers"
+          debug:
+            msg: |
+              === ZAWARTOŚĆ PLIKU {{ sudoers_file_path }} ===
+              {{ sudoers_file_content.content | b64decode if not ansible_check_mode else 'Dry-run - plik nie został utworzony' }}
 
-          === TESTOWANIE ===
-          {% if sudoers_target_user_mode %}
-          Aby przetestować, zaloguj się jako użytkownik z grupy {{ sudoers_subject }} i wykonaj:
-          sudo su - {{ sudoers_target_user }}
-          {% elif sudoers_mode == 'user' %}
-          Aby przetestować uprawnienia, zaloguj się jako {{ sudoers_subject }}:
-          sudo su - {{ sudoers_subject }}
-          Następnie sprawdź dostępne komendy: sudo -l
-          {% else %}
-          Aby przetestować uprawnienia, zaloguj się jako użytkownik z grupy {{ sudoers_subject }}:
-          Następnie sprawdź dostępne komendy: sudo -l
-          {% endif %}
+        - name: "Test uprawnień sudo dla użytkownika"
+          shell: |
+            # Sprawdź czy użytkownik może używać sudo -l
+            sudo -l -U {{ sudoers_subject }} | grep -E "(NOPASSWD|{{ sudoers_subject }})" || echo "Brak uprawnień"
+          register: sudo_test
+          changed_when: false
+          failed_when: false
+          when: sudoers_mode == 'user'
 
-          === ZARZĄDZANIE ===
-          Plik konfiguracyjny: {{ sudoers_file_path }}
-          Usuń uprawnienia: sudo rm {{ sudoers_file_path }}
+        - name: "Wyświetl podsumowanie"
+          debug:
+            msg: |
+              === PODSUMOWANIE KONFIGURACJI SUDOERS ===
+              Tryb: {{ sudoers_mode }}{{ ' (AD/LDAP)' if sudoers_mode == 'groupldap' else '' }}{{ ' -> przełączenie na użytkownika' if sudoers_target_user_mode else '' }}
+              {{ 'Grupa' if sudoers_mode in ['group', 'groupldap'] else 'Użytkownik' }}: {{ sudoers_subject }}
+              {% if sudoers_target_user_mode %}
+              Użytkownik docelowy: {{ sudoers_target_user }}
+              {% endif %}
+              Plik sudoers: {{ sudoers_file_path }}
+              Status: {{ 'Dry-run - zmiany nie zostały zastosowane' if ansible_check_mode else ('Utworzony' if sudoers_created.changed else 'Już istniał') }}
+              Walidacja: {{ 'Pomyślna' if (visudo_check is defined and visudo_check.rc is defined and visudo_check.rc == 0) else ('Pominięta' if ansible_check_mode else 'Błąd') }}
+
+              === TESTOWANIE ===
+              {% if sudoers_target_user_mode %}
+              Aby przetestować, zaloguj się jako użytkownik z grupy {{ sudoers_subject }} i wykonaj:
+              sudo su - {{ sudoers_target_user }}
+              {% elif sudoers_mode == 'user' %}
+              Aby przetestować uprawnienia, zaloguj się jako {{ sudoers_subject }}:
+              sudo su - {{ sudoers_subject }}
+              Następnie sprawdź dostępne komendy: sudo -l
+              {% else %}
+              Aby przetestować uprawnienia, zaloguj się jako użytkownik z grupy {{ sudoers_subject }}:
+              Następnie sprawdź dostępne komendy: sudo -l
+              {% endif %}
+
+              === ZARZĄDZANIE ===
+              Plik konfiguracyjny: {{ sudoers_file_path }}
+              Usuń uprawnienia: sudo rm {{ sudoers_file_path }}
+      when: sudoers_action == 'configure'
       tags: sudoers
